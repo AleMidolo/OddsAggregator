@@ -4,9 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import StrEnum
-from typing import Generic, Protocol, TypeVar
-
-T = TypeVar("T")
+from typing import Protocol
 
 
 class ConnectorRunStatus(StrEnum):
@@ -40,7 +38,7 @@ class InMemoryConnectorMetrics:
 
 
 @dataclass(frozen=True, slots=True)
-class ConnectorRunOutcome(Generic[T]):
+class ConnectorRunOutcome[T]:
     bookmaker_code: str
     operation: str
     status: ConnectorRunStatus

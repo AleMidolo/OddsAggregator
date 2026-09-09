@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
 
 import pytest
@@ -60,7 +60,7 @@ async def test_fake_connector_is_deterministic_and_satisfies_protocol() -> None:
         source_id="event-1",
         sport_source_id="football",
         participants=(SourceEventParticipant(source_id="team-a", role="home"),),
-        start_time=datetime(2026, 9, 10, 18, 0, tzinfo=timezone.utc),
+        start_time=datetime(2026, 9, 10, 18, 0, tzinfo=UTC),
     )
     market = SourceMarket(
         source_id="m1",

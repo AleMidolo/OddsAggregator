@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Mapping
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from typing import Mapping
+from datetime import UTC, datetime
 
 from .dtos import (
     ConnectorHealth,
@@ -32,7 +32,7 @@ class FakeBookmakerConnector:
     health_value: ConnectorHealth = field(
         default_factory=lambda: ConnectorHealth(
             status=ConnectorHealthStatus.HEALTHY,
-            checked_at=datetime(2024, 1, 1, tzinfo=timezone.utc),
+            checked_at=datetime(2024, 1, 1, tzinfo=UTC),
         )
     )
     attempts: dict[str, int] = field(default_factory=dict, init=False)

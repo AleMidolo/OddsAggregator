@@ -320,7 +320,7 @@ class ConnectorOperationExecutor:
         return max(0.0, exponential * (1.0 + jitter))
 
 
-async def run_isolated_operations(
+async def run_isolated_operations[T](
     executor: ConnectorOperationExecutor,
     operation_name: str,
     operations: Mapping[str, Callable[[], Awaitable[T]]],
