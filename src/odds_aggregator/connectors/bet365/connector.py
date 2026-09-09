@@ -178,7 +178,10 @@ class Bet365SportradarConnector:
 
     async def health(self) -> ConnectorHealth:
         response = await self._client.get_json("books.json")
-        configured = any(self._is_bet365_book(book) for book in _object_list(response.payload.get("books")))
+        configured = any(
+            self._is_bet365_book(book)
+            for book in _object_list(response.payload.get("books"))
+        )
         if configured:
             return ConnectorHealth(
                 status=ConnectorHealthStatus.HEALTHY,
