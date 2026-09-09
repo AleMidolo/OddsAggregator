@@ -1,7 +1,7 @@
 """Initial normalized domain and historical odds schema."""
 
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 
 revision = "0001_initial_schema"
 down_revision = None
@@ -58,7 +58,11 @@ def upgrade() -> None:
         sa.Column("updated_at", TZ, nullable=False),
     )
     op.create_index("ix_events_sport_start_time", "events", ["sport_id", "start_time"])
-    op.create_index("ix_events_competition_start_time", "events", ["competition_id", "start_time"])
+    op.create_index(
+        "ix_events_competition_start_time",
+        "events",
+        ["competition_id", "start_time"],
+    )
     op.create_table(
         "event_participants",
         sa.Column("event_id", UUID, sa.ForeignKey("events.id"), primary_key=True),
@@ -106,7 +110,11 @@ def upgrade() -> None:
         sa.Column("error_code", sa.String(128)),
         sa.Column("error_summary", sa.Text()),
     )
-    op.create_index("ix_connector_runs_bookmaker_started", "connector_runs", ["bookmaker_id", "started_at"])
+    op.create_index(
+        "ix_connector_runs_bookmaker_started",
+        "connector_runs",
+        ["bookmaker_id", "started_at"],
+    )
     op.create_table(
         "market_snapshots",
         sa.Column("id", UUID, primary_key=True),
