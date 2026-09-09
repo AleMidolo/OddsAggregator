@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
 from pathlib import Path
 from uuid import uuid4
@@ -26,7 +26,7 @@ def test_odds_quote_requires_valid_decimal_odds() -> None:
             selection_id=uuid4(),
             decimal_odds=Decimal("1.0"),
             is_available=True,
-            observed_at=datetime.now(timezone.utc),
+            observed_at=datetime.now(UTC),
             observation_key="x",
         )
 
@@ -34,7 +34,7 @@ def test_odds_quote_requires_valid_decimal_odds() -> None:
 def test_observation_key_is_deterministic_and_sensitive_to_change() -> None:
     bookmaker_id = uuid4()
     selection_id = uuid4()
-    observed_at = datetime(2026, 9, 9, 12, 0, tzinfo=timezone.utc)
+    observed_at = datetime(2026, 9, 9, 12, 0, tzinfo=UTC)
 
     first = build_observation_key(
         bookmaker_id=bookmaker_id,
