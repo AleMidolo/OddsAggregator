@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import hashlib
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
 from uuid import UUID
 
@@ -11,7 +11,7 @@ def _timestamp(value: datetime | None) -> str:
         return ""
     if value.tzinfo is None or value.utcoffset() is None:
         raise ValueError("observation timestamps must be timezone-aware")
-    return value.astimezone(timezone.utc).isoformat(timespec="microseconds")
+    return value.astimezone(UTC).isoformat(timespec="microseconds")
 
 
 def build_observation_key(
