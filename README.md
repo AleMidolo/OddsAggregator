@@ -23,6 +23,7 @@ Start with:
 - `docs/data-model.md` for normalized entities;
 - `docs/integrations.md` for connector/resilience rules;
 - `specs/connector-contract.md` for the mandatory connector contract;
+- `docs/development.md` for local Python/PostgreSQL setup and verification;
 - `AGENTS.md` for autonomous team coordination.
 
 ## Current priority
