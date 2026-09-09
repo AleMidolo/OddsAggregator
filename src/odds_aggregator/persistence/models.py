@@ -139,7 +139,12 @@ class ConnectorRunRecord(Base):
 class MarketSnapshotRecord(Base):
     __tablename__ = "market_snapshots"
     __table_args__ = (
-        Index("ix_snapshots_market_bookmaker_observed", "market_id", "bookmaker_id", "observed_at"),
+        Index(
+            "ix_snapshots_market_bookmaker_observed",
+            "market_id",
+            "bookmaker_id",
+            "observed_at",
+        ),
     )
 
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
@@ -156,7 +161,12 @@ class OddsQuoteRecord(Base):
     __tablename__ = "odds_quotes"
     __table_args__ = (
         UniqueConstraint("observation_key", name="uq_odds_quotes_observation_key"),
-        Index("ix_quotes_selection_bookmaker_observed", "selection_id", "bookmaker_id", "observed_at"),
+        Index(
+            "ix_quotes_selection_bookmaker_observed",
+            "selection_id",
+            "bookmaker_id",
+            "observed_at",
+        ),
     )
 
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
