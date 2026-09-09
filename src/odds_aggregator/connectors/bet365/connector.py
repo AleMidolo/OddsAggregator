@@ -180,7 +180,7 @@ class Bet365SportradarConnector:
         response = await self._client.get_json("books.json")
         configured = any(
             self._is_bet365_book(book)
-            for book in _object_list(response.payload.get("books"))
+            for book in _required_object_list(response.payload, "books", context="books")
         )
         if configured:
             return ConnectorHealth(
@@ -200,7 +200,8 @@ class Bet365SportradarConnector:
     async def list_sports(self) -> list[SourceSport]:
         response = await self._client.get_json("sports.json")
         sports: list[SourceSport] = []
-        for raw_sport in _object_list(response.payload.get("sports")):
+        raw_sports = _required_object_list(response.payload, "sports", context="sports")
+        for raw_sport in raw_sports:
             source_id = _string(raw_sport.get("id"))
             name = _string(raw_sport.get("name"))
             if source_id is None or name is None:
@@ -231,9 +232,11 @@ class Bet365SportradarConnector:
 
         response = await self._client.get_json(path, params=params)
         generated_at = _aware_datetime(response.payload.get("generated_at"))
-        raw_schedules = _object_list(response.payload.get("schedules"))
-        if not raw_schedules:
-            raw_schedules = _object_list(response.payload.get("sport_events"))
+        raw_schedules = _required_object_list_one_of(
+            response.payload,
+            ("schedules", "sport_events"),
+            context="event schedules",
+        )
 
         events: list[SourceEvent] = []
         for raw_schedule in raw_schedules:
@@ -255,8 +258,9 @@ class Bet365SportradarConnector:
             params={"live": "false"},
         )
         generated_at = _aware_datetime(response.payload.get("generated_at"))
+        raw_markets = _required_object_list(response.payload, "markets", context="markets")
         markets: list[SourceMarket] = []
-        for raw_market in _object_list(response.payload.get("markets")):
+        for raw_market in raw_markets:
             market = self._parse_market(
                 raw_market,
                 event_source_id=request.event_source_id,
@@ -357,7 +361,11 @@ class Bet365SportradarConnector:
         selections: list[SourceSelection] = []
         skipped_outcomes = 0
         for raw_outcome in _object_list(bet365_book.get("outcomes")):
-            selection = _parse_selection(raw_outcome, generated_at=generated_at)
+            selection = _parse_selection(
+                raw_outcome,
+                generated_at=generated_at,
+                parent_removed=removed,
+            )
             if selection is None:
                 skipped_outcomes += 1
                 continue
@@ -400,8 +408,9 @@ def _parse_selection(
     raw_outcome: Mapping[str, object],
     *,
     generated_at: datetime | None,
+    parent_removed: bool = False,
 ) -> SourceSelection | None:
-    removed = _boolean(raw_outcome.get("removed"), default=False)
+    removed = parent_removed or _boolean(raw_outcome.get("removed"), default=False)
     decimal_odds = _decimal(raw_outcome.get("odds_decimal"))
     available = not removed and decimal_odds is not None and decimal_odds > Decimal("1")
     if not available:
@@ -471,6 +480,37 @@ def _object_list(value: object) -> Sequence[Mapping[str, object]]:
         if mapped is not None:
             result.append(mapped)
     return result
+
+
+def _required_object_list(
+    payload: Mapping[str, object],
+    key: str,
+    *,
+    context: str,
+) -> Sequence[Mapping[str, object]]:
+    if key not in payload:
+        raise ConnectorSchemaError(f"Sportradar {context} payload is missing '{key}'")
+    value = payload[key]
+    if not isinstance(value, list):
+        raise ConnectorSchemaError(f"Sportradar {context} field '{key}' must be an array")
+    return _object_list(value)
+
+
+def _required_object_list_one_of(
+    payload: Mapping[str, object],
+    keys: tuple[str, ...],
+    *,
+    context: str,
+) -> Sequence[Mapping[str, object]]:
+    for key in keys:
+        if key not in payload:
+            continue
+        value = payload[key]
+        if not isinstance(value, list):
+            raise ConnectorSchemaError(f"Sportradar {context} field '{key}' must be an array")
+        return _object_list(value)
+    expected = " or ".join(f"'{key}'" for key in keys)
+    raise ConnectorSchemaError(f"Sportradar {context} payload is missing {expected}")
 
 
 def _string(value: object) -> str | None:
