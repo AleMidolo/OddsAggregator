@@ -9,6 +9,7 @@ class ConnectorError(Exception):
     """Base class for connector failures understood by ingestion policy."""
 
     retryable: ClassVar[bool] = False
+    retry_after_seconds: float | None
 
     def __init__(self, message: str, *, retry_after_seconds: float | None = None) -> None:
         super().__init__(message)

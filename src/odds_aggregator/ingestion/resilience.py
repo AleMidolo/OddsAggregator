@@ -308,15 +308,16 @@ class ConnectorOperationExecutor:
         error: ConnectorError,
         attempt: int,
     ) -> float:
-        if isinstance(error, ConnectorRateLimitedError) and error.retry_after_seconds is not None:
-            return max(0.0, error.retry_after_seconds)
-        exponential = min(
+        retry_after = error.retry_after_seconds
+        if isinstance(error, ConnectorRateLimitedError) and retry_after is not None:
+            return max(0.0, retry_after)
+        exponential: float = min(
             policy.max_backoff_seconds,
-            policy.base_backoff_seconds * (2 ** (attempt - 1)),
+            policy.base_backoff_seconds * (2.0 ** (attempt - 1)),
         )
         if exponential == 0 or policy.jitter_ratio == 0:
             return exponential
-        jitter = (self._random_source() * 2.0 - 1.0) * policy.jitter_ratio
+        jitter: float = (self._random_source() * 2.0 - 1.0) * policy.jitter_ratio
         return max(0.0, exponential * (1.0 + jitter))
 
 
