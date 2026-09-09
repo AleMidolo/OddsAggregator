@@ -18,7 +18,7 @@ def _require_timezone_aware(value: datetime) -> datetime:
 
 
 AwareDatetime = Annotated[datetime, AfterValidator(_require_timezone_aware)]
-PositiveDecimal = Annotated[Decimal, Field(gt=Decimal("0"))]
+ValidDecimalOdds = Annotated[Decimal, Field(gt=Decimal("1"))]
 
 
 class ConnectorDTO(BaseModel):
@@ -102,7 +102,7 @@ class SourceEvent(ConnectorDTO):
 
 
 class SourcePrice(ConnectorDTO):
-    decimal_odds: PositiveDecimal | None = None
+    decimal_odds: ValidDecimalOdds | None = None
     is_available: bool = True
     source_updated_at: AwareDatetime | None = None
 
