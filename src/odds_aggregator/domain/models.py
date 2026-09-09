@@ -162,7 +162,7 @@ class OddsQuote:
     snapshot_id: UUID
     bookmaker_id: UUID
     selection_id: UUID
-    decimal_odds: Decimal
+    decimal_odds: Decimal | None
     is_available: bool
     observed_at: datetime
     observation_key: str
@@ -170,8 +170,11 @@ class OddsQuote:
     source_updated_at: datetime | None = None
 
     def __post_init__(self) -> None:
-        if self.decimal_odds <= Decimal("1"):
-            raise ValueError("decimal_odds must be greater than 1")
+        if self.is_available:
+            if self.decimal_odds is None or self.decimal_odds <= Decimal("1"):
+                raise ValueError("available quote requires decimal_odds greater than 1")
+        elif self.decimal_odds is not None:
+            raise ValueError("unavailable quote must not carry decimal_odds")
         if not self.observation_key:
             raise ValueError("observation_key must not be empty")
         _require_aware(self.observed_at, "observed_at")
