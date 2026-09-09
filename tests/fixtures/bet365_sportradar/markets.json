@@ -1,0 +1,97 @@
+{
+  "generated_at": "2026-09-09T15:00:30Z",
+  "sport_event": {
+    "id": "sr:sport_event:1001",
+    "status": "not_started"
+  },
+  "markets": [
+    {
+      "id": "sr:market:1",
+      "name": "3way",
+      "books": [
+        {
+          "id": "sr:book:18186",
+          "name": "FanDuel",
+          "external_market_id": "fd-market-1",
+          "outcomes": []
+        },
+        {
+          "id": "sr:book:28901",
+          "name": "Bet365.US.NJ",
+          "external_market_id": "b365-market-1",
+          "external_sport_event_id": "b365-event-1",
+          "removed": false,
+          "outcomes": [
+            {
+              "id": "sr:outcome:home",
+              "external_outcome_id": "b365-home",
+              "type": "home",
+              "odds_decimal": "2.10",
+              "removed": false
+            },
+            {
+              "id": "sr:outcome:draw",
+              "external_outcome_id": "b365-draw",
+              "type": "draw",
+              "odds_decimal": "3.40",
+              "removed": true
+            },
+            {
+              "id": "sr:outcome:away",
+              "type": "away",
+              "odds_decimal": "3.25",
+              "removed": false
+            },
+            {
+              "odds_decimal": "2.00"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sr:market:3",
+      "name": "total",
+      "books": [
+        {
+          "id": "sr:book:28901",
+          "name": "Bet365.US.NJ",
+          "external_market_id": "b365-market-suspended",
+          "external_sport_event_id": "b365-event-1",
+          "removed": true,
+          "outcomes": [
+            {
+              "id": "sr:outcome:over",
+              "external_outcome_id": "b365-over",
+              "type": "over",
+              "total": 2.5,
+              "removed": true
+            },
+            {
+              "id": "sr:outcome:under",
+              "external_outcome_id": "b365-under",
+              "type": "under",
+              "total": 2.5,
+              "removed": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "malformed",
+      "books": [
+        {
+          "id": "sr:book:28901",
+          "name": "Bet365.US.NJ",
+          "removed": false,
+          "outcomes": [
+            {
+              "odds_decimal": "not-a-number"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
