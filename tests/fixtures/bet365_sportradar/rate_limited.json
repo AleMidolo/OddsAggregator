@@ -1,0 +1,4 @@
+{
+  "message": "Too many requests",
+  "fixture_note": "Sanitized synthetic body used with HTTP 429 and Retry-After"
+}
