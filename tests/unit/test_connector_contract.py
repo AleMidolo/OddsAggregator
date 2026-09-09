@@ -18,7 +18,7 @@ from odds_aggregator.connectors import (
     SourceSport,
 )
 from odds_aggregator.connectors.fake import FakeBookmakerConnector
-from tests.contract_harness import assert_connector_contract
+from odds_aggregator.testing import assert_connector_contract
 
 
 def test_connector_dtos_preserve_source_identity_and_explicit_suspension() -> None:
