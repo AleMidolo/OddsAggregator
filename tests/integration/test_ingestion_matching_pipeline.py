@@ -337,6 +337,7 @@ async def test_ambiguous_parent_skips_dependent_market_path(engine) -> None:
             )
         )
         session.add(SportRecord(id=SPORT, code="football", name="Football"))
+        session.flush()
         session.add_all(
             [
                 ParticipantRecord(
