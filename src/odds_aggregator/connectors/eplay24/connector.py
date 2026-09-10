@@ -16,7 +16,13 @@ from datetime import datetime
 
 from ..bet365.connector import SportradarJsonClient
 from ..bet365.semantic import Bet365SportradarConnector as _SportradarSemanticConnector
-from ..dtos import ConnectorHealth, ConnectorHealthStatus, EventFeedRequest, SourceEvent, SourceMarket
+from ..dtos import (
+    ConnectorHealth,
+    ConnectorHealthStatus,
+    EventFeedRequest,
+    SourceEvent,
+    SourceMarket,
+)
 from ..errors import ConnectorConfigurationError
 
 EPLAY24_BOOK_NAME = "E-Play24"
