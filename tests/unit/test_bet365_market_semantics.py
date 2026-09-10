@@ -210,3 +210,31 @@ async def test_inconsistent_total_threshold_is_not_promoted_to_canonical_semanti
     assert market.period is None
     assert market.line is None
     assert all(selection.selection_type is None for selection in market.selections)
+
+
+@pytest.mark.asyncio
+async def test_generic_total_name_cannot_erase_documented_overtime_semantics() -> None:
+    """Current-v2 ID 225 is Total (incl. overtime), not plain full-time Total."""
+    payload = _market_payload(
+        market_id="sr:market:225",
+        name="total",
+        outcomes=[
+            {"id": "over", "type": "over", "total": 2.5, "odds_decimal": "1.90"},
+            {"id": "under", "type": "under", "total": 2.5, "odds_decimal": "1.90"},
+        ],
+    )
+    connector = Bet365SportradarConnector(client=PayloadClient(payload))
+
+    market = (
+        await connector.get_markets(MarketFeedRequest(event_source_id="sr:sport_event:1001"))
+    ).markets[0]
+
+    # SourceMarket cannot currently express the provider's "incl. overtime"
+    # variant. Until that semantic is explicitly represented, this market must
+    # remain unsupported rather than collide with ordinary full-time Total.
+    assert market.name == "total"
+    assert market.market_type is None
+    assert market.period is None
+    assert market.scope is None
+    assert market.line is None
+    assert all(selection.selection_type is None for selection in market.selections)
