@@ -50,6 +50,20 @@ class DecisionDraft:
 
 
 @dataclass(frozen=True, slots=True)
+class StoredDecision:
+    decision_id: UUID
+    source_fingerprint: str
+    decision_key: str
+    state: MatchState
+    canonical_id: UUID | None
+    reason_code: str
+    best_score: Decimal | None
+    runner_up_score: Decimal | None
+    evidence: dict[str, object]
+    candidates: tuple[CandidateEvidence, ...]
+
+
+@dataclass(frozen=True, slots=True)
 class PersistenceResult:
     canonical_id: UUID | None
     decision_id: UUID | None
@@ -60,6 +74,8 @@ class MatchingStore(Protocol):
     def lookup_mapping(
         self, *, bookmaker_id: UUID, entity_type: str, source_id: str
     ) -> UUID | None: ...
+
+    def lookup_decision(self, *, decision_key: str) -> StoredDecision | None: ...
 
     def competition_candidates(self, *, sport_id: UUID) -> tuple[CompetitionCandidate, ...]: ...
 
@@ -134,6 +150,16 @@ class PrematchMatchingService:
         if existing is not None:
             return MatchOutcome(MatchState.REUSED, existing, "mapping_reused")
 
+        fingerprint = competition_fingerprint(source)
+        replay = self._decision_replay(
+            bookmaker_id=bookmaker_id,
+            entity_type="competition",
+            source_id=source.source_id,
+            fingerprint=fingerprint,
+        )
+        if replay is not None:
+            return replay
+
         plan = decide_competition(
             source,
             self._store.competition_candidates(sport_id=source.sport_id),
@@ -145,7 +171,6 @@ class PrematchMatchingService:
             plan=plan,
         )
         plan = self._with_canonical(plan, canonical_id)
-        fingerprint = competition_fingerprint(source)
         draft = self._decision(
             bookmaker_id=bookmaker_id,
             entity_type="competition",
@@ -177,6 +202,16 @@ class PrematchMatchingService:
         if existing is not None:
             return MatchOutcome(MatchState.REUSED, existing, "mapping_reused")
 
+        fingerprint = participant_fingerprint(source)
+        replay = self._decision_replay(
+            bookmaker_id=bookmaker_id,
+            entity_type="participant",
+            source_id=source.source_id,
+            fingerprint=fingerprint,
+        )
+        if replay is not None:
+            return replay
+
         plan = decide_participant(
             source,
             self._store.participant_candidates(sport_id=source.sport_id),
@@ -188,7 +223,6 @@ class PrematchMatchingService:
             plan=plan,
         )
         plan = self._with_canonical(plan, canonical_id)
-        fingerprint = participant_fingerprint(source)
         draft = self._decision(
             bookmaker_id=bookmaker_id,
             entity_type="participant",
@@ -219,6 +253,16 @@ class PrematchMatchingService:
         if existing is not None:
             return MatchOutcome(MatchState.REUSED, existing, "mapping_reused")
 
+        fingerprint = event_fingerprint(source)
+        replay = self._decision_replay(
+            bookmaker_id=bookmaker_id,
+            entity_type="event",
+            source_id=source.source_id,
+            fingerprint=fingerprint,
+        )
+        if replay is not None:
+            return replay
+
         _, guard_seconds = event_windows_seconds(source.sport_code)
         candidates = self._store.event_candidates(
             sport_id=source.sport_id,
@@ -233,7 +277,6 @@ class PrematchMatchingService:
             plan=plan,
         )
         plan = self._with_canonical(plan, canonical_id)
-        fingerprint = event_fingerprint(source)
         draft = self._decision(
             bookmaker_id=bookmaker_id,
             entity_type="event",
@@ -248,6 +291,52 @@ class PrematchMatchingService:
             decision=draft,
         )
         return self._outcome(plan, draft, persisted)
+
+    def _decision_replay(
+        self,
+        *,
+        bookmaker_id: UUID,
+        entity_type: str,
+        source_id: str,
+        fingerprint: str,
+    ) -> MatchOutcome | None:
+        key = decision_key(
+            bookmaker_id=bookmaker_id,
+            entity_type=entity_type,
+            source_id=source_id,
+            source_fingerprint=fingerprint,
+            rule_version=self._rule_version,
+        )
+        stored = self._store.lookup_decision(decision_key=key)
+        if stored is None:
+            return None
+        if stored.source_fingerprint != fingerprint or stored.decision_key != key:
+            raise RuntimeError("persisted matching decision does not match its deterministic key")
+        if stored.state in {MatchState.MATCHED, MatchState.CREATED}:
+            mapping = self._store.lookup_mapping(
+                bookmaker_id=bookmaker_id,
+                entity_type=entity_type,
+                source_id=source_id,
+            )
+            if mapping is None or mapping != stored.canonical_id:
+                raise RuntimeError("accepted matching decision exists without its canonical mapping")
+            return MatchOutcome(MatchState.REUSED, mapping, "mapping_reused")
+        return self._stored_outcome(stored)
+
+    @staticmethod
+    def _stored_outcome(stored: StoredDecision) -> MatchOutcome:
+        return MatchOutcome(
+            state=stored.state,
+            canonical_id=stored.canonical_id,
+            reason_code=stored.reason_code,
+            source_fingerprint=stored.source_fingerprint,
+            decision_key=stored.decision_key,
+            decision_id=stored.decision_id,
+            best_score=stored.best_score,
+            runner_up_score=stored.runner_up_score,
+            evidence=stored.evidence,
+            candidates=stored.candidates,
+        )
 
     def _accepted_canonical_id(
         self,
