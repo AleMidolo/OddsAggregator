@@ -13,10 +13,12 @@ from sqlalchemy.orm import Session
 
 from odds_aggregator.application import ConnectorIngestionService
 from odds_aggregator.connectors import (
+    SourceCompetition,
     SourceEvent,
     SourceEventParticipant,
     SourceMarket,
     SourceMarketStatus,
+    SourceParticipant,
     SourcePrice,
     SourceSelection,
     SourceSport,
@@ -66,14 +68,40 @@ def engine():
 
 
 def _connector(price: Decimal) -> FakeBookmakerConnector:
+    competition = SourceCompetition(
+        source_id="competition-1",
+        sport_source_id="sport-football",
+        name="Fixture League",
+    )
+    home = SourceParticipant(
+        source_id="team-alpha",
+        name="Alpha",
+        participant_type="team",
+    )
+    away = SourceParticipant(
+        source_id="team-beta",
+        name="Beta",
+        participant_type="team",
+    )
     event = SourceEvent(
         source_id="event-1",
         sport_source_id="sport-football",
-        competition_source_id="competition-1",
+        competition_source_id=competition.source_id,
+        competition=competition,
         name="Alpha v Beta",
         participants=(
-            SourceEventParticipant(source_id="team-alpha", role="home", position=1),
-            SourceEventParticipant(source_id="team-beta", role="away", position=2),
+            SourceEventParticipant(
+                source_id=home.source_id,
+                role="home",
+                position=1,
+                participant=home,
+            ),
+            SourceEventParticipant(
+                source_id=away.source_id,
+                role="away",
+                position=2,
+                participant=away,
+            ),
         ),
         start_time=datetime(2026, 9, 10, 18, 0, tzinfo=UTC),
         source_updated_at=SOURCE_TIME,
