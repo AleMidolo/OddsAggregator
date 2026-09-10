@@ -1,14 +1,16 @@
 # OddsAggregator
 
-OddsAggregator is a multi-bookmaker betting-odds aggregation platform.
+OddsAggregator is a multi-bookmaker **prematch** betting-odds aggregation platform.
 
-It collects bookmaker/provider sports, competitions, events, participants, markets, selections, odds, and related metadata through permitted integration methods, then normalizes that data into a common bookmaker-agnostic model.
+It collects bookmaker/provider sports, competitions, events, participants, markets, selections, prematch odds, and related metadata through permitted integration methods, then normalizes that data into a common bookmaker-agnostic model.
+
+**Product scope is prematch-only. Live/in-play matches and live/in-play odds are not part of the product roadmap and must not be implemented unless the product scope is explicitly changed in the future.**
 
 The normalized platform is intended to support:
-- odds comparison;
-- historical odds;
-- arbitrage detection;
-- line-movement analysis;
+- prematch odds comparison;
+- historical prematch odds;
+- prematch arbitrage detection;
+- prematch line-movement analysis;
 - alerts;
 - analytics.
 
@@ -25,7 +27,7 @@ Completed foundations include:
 - first permitted reference connector: Bet365 through Sportradar Odds Comparison Prematch v2;
 - end-to-end fixture-based connector -> ingestion -> canonical PostgreSQL validation.
 
-The Bet365 connector does not scrape or automate Bet365 properties. Its documented permitted boundary is Sportradar and its current scope is prematch-only; see `docs/bookmakers/bet365.md`.
+The Bet365 connector does not scrape or automate Bet365 properties. Its documented permitted boundary is Sportradar and its scope is prematch-only; see `docs/bookmakers/bet365.md`.
 
 Start with:
 - `roadmap.md` for milestones and sequencing;
@@ -40,9 +42,9 @@ Start with:
 
 ## Current priority
 
-Milestone M3 — multi-source normalization and matching — is now in progress.
+Milestone M3 — multi-source prematch normalization and matching — is now in progress.
 
-The highest-priority task is issue #14: define the implementation-ready cross-source matching and canonicalization contract. Issue #15, adding a second permitted source for realistic multi-source validation, is also ready and may proceed in parallel. Backend matching issues #16 and #17 follow the architecture contract, and QA issue #18 validates the complete two-source reconciliation path.
+The highest-priority task is issue #14: define the implementation-ready cross-source matching and canonicalization contract for prematch data. Issue #15, adding a second permitted prematch source for realistic multi-source validation, is also ready and may proceed in parallel. Backend matching issues #16 and #17 follow the architecture contract, and QA issue #18 validates the complete two-source reconciliation path.
 
 ## Integration policy
 
