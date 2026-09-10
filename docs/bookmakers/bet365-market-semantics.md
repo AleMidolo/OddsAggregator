@@ -16,9 +16,11 @@ Sportradar display/source text remains in `SourceMarket.name` and `SourceSelecti
 | market name `total` or current documented market ID `18` | `total` | `full_time` | common structured outcome `total` value |
 | market name `spread` | `spread` | `full_time` | structured home-side `spread` when home/away values are exact opposites |
 
-When both recognized market-name and market-ID evidence are present, they must resolve to the same canonical semantics. A conflict leaves the market unsupported.
+When both recognized market-name and supported market-ID evidence are present, they must resolve to the same canonical semantics. A conflict leaves the market unsupported.
 
-The reference sanitized fixture intentionally contains `sr:market:3` with name `total`. ID `3` is not used as current-v2 semantic evidence; the explicit documented/provider market name supplies the safe mapping for that fixture.
+Structured provider IDs take precedence over generic display names. Current Prematch v2 IDs whose documented meaning carries a different period, scope, variant, or market structure are explicitly treated as unsupported by this adapter rather than being reinterpreted through a shorter name. For example, ID `225` is `Total (incl. overtime)`, so a payload that presents ID `225` with display name `total` must remain unsupported until the shared model and adapter explicitly represent that overtime variant. The same conservative rule is applied to other documented but currently unsupported IDs covering team totals, half/quarter markets, overtime/extra-innings variants, and period-specific structures.
+
+The reference sanitized fixture intentionally contains `sr:market:3` with name `total`. ID `3` is not used as current-v2 semantic evidence; the explicit fixture/provider name plus consistent structured over/under totals supplies the safe mapping for that legacy fixture. Unknown IDs are not assumed to carry any specific semantics unless supported by explicit provider-name and structural evidence, while known documented incompatible IDs never fall back to the generic name mapping.
 
 ## Selection mappings
 
@@ -34,6 +36,6 @@ For totals, only the structured outcome `total` field is used as the threshold. 
 
 ## Provider references
 
-The implementation is based on Sportradar Odds Comparison Prematch v2 documentation current at implementation time. The Sport Event Markets endpoint documents market IDs/names and structured outcome fields including `type`, `spread`, `total`, and `handicap`. The Prematch overview documents market IDs and structures, including ID `1` for 1x2, ID `18` for Total, and ID `60` for 1st Half - 1x2.
+The implementation is based on Sportradar Odds Comparison Prematch v2 documentation current at implementation time. The Sport Event Markets endpoint documents market IDs/names and structured outcome fields including `type`, `spread`, `total`, and `handicap`. The Prematch overview documents market IDs and structures, including ID `1` for 1x2, ID `18` for Total, ID `60` for 1st Half - 1x2, and variant/scoped markets such as ID `225` for Total (incl. overtime).
 
 Any expansion of this mapping table requires documented provider semantics plus deterministic fixture tests. Live/in-play markets remain out of scope.
