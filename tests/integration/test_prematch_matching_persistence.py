@@ -8,7 +8,7 @@ from uuid import UUID
 import pytest
 from alembic import command
 from alembic.config import Config
-from sqlalchemy import create_engine, func, select
+from sqlalchemy import create_engine, delete, func, select
 from sqlalchemy.orm import Session
 
 from odds_aggregator.domain.canonical_ids import canonical_entity_id
@@ -324,3 +324,69 @@ def test_nonaccepted_replay_and_created_identity_are_safe(engine) -> None:
             )
         )
         assert ambiguous_decisions == 1
+
+
+def test_ambiguous_decision_stays_authoritative_when_candidates_change(engine) -> None:
+    _seed_reference_graph(engine)
+    first_candidate = UUID("40000000-0000-0000-0000-000000000020")
+    second_candidate = UUID("40000000-0000-0000-0000-000000000021")
+    with Session(engine) as session, session.begin():
+        session.add_all(
+            [
+                ParticipantRecord(
+                    id=first_candidate,
+                    sport_id=SPORT_ID,
+                    type="team",
+                    name="Stable United",
+                    country_code=None,
+                ),
+                ParticipantRecord(
+                    id=second_candidate,
+                    sport_id=SPORT_ID,
+                    type="team",
+                    name="Stable-United",
+                    country_code=None,
+                ),
+            ]
+        )
+
+    service = PrematchMatchingService(
+        SQLAlchemyMatchingStore(create_session_factory(engine)),
+        now=lambda: NOW,
+    )
+    source = ParticipantInput("stable-ambiguous", SPORT_ID, "Stable United", "team")
+    first = service.resolve_participant(
+        bookmaker_id=BOOKMAKER_ID,
+        bookmaker_code="book-b",
+        source=source,
+    )
+    assert first.state is MatchState.AMBIGUOUS
+    assert first.decision_id is not None
+
+    with Session(engine) as session, session.begin():
+        session.execute(delete(ParticipantRecord).where(ParticipantRecord.id == second_candidate))
+
+    replay = service.resolve_participant(
+        bookmaker_id=BOOKMAKER_ID,
+        bookmaker_code="book-b",
+        source=source,
+    )
+    assert replay.state is MatchState.AMBIGUOUS
+    assert replay.decision_key == first.decision_key
+    assert replay.decision_id == first.decision_id
+
+    with Session(engine) as session:
+        mapping_count = session.scalar(
+            select(func.count()).select_from(SourceEntityMappingRecord).where(
+                SourceEntityMappingRecord.bookmaker_id == BOOKMAKER_ID,
+                SourceEntityMappingRecord.entity_type == "participant",
+                SourceEntityMappingRecord.source_id == "stable-ambiguous",
+            )
+        )
+        decision_count = session.scalar(
+            select(func.count()).select_from(MatchDecisionRecord).where(
+                MatchDecisionRecord.source_id == "stable-ambiguous"
+            )
+        )
+        assert mapping_count == 0
+        assert decision_count == 1
