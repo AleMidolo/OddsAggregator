@@ -1,1 +1,61 @@
-"""Matching package boundary."""
+"""Deterministic prematch cross-source matching primitives."""
+
+from .models import (
+    RULE_VERSION,
+    CandidateDisposition,
+    CandidateEvidence,
+    CompetitionCandidate,
+    CompetitionInput,
+    EventCandidate,
+    EventInput,
+    EventParticipantCandidate,
+    EventParticipantInput,
+    MatchOutcome,
+    MatchState,
+    ParticipantCandidate,
+    ParticipantInput,
+)
+from .normalization import (
+    accent_fold,
+    best_name_similarity,
+    name_similarity,
+    normalize_country,
+    normalize_gender,
+    normalize_name,
+    normalize_participant_type,
+    normalize_role,
+    normalize_season,
+)
+from .scoring import decide_competition, decide_event, decide_participant, event_windows_seconds
+from .service import MatchingStore, PrematchMatchingService
+
+__all__ = [
+    "RULE_VERSION",
+    "CandidateDisposition",
+    "CandidateEvidence",
+    "CompetitionCandidate",
+    "CompetitionInput",
+    "EventCandidate",
+    "EventInput",
+    "EventParticipantCandidate",
+    "EventParticipantInput",
+    "MatchOutcome",
+    "MatchState",
+    "MatchingStore",
+    "ParticipantCandidate",
+    "ParticipantInput",
+    "PrematchMatchingService",
+    "accent_fold",
+    "best_name_similarity",
+    "decide_competition",
+    "decide_event",
+    "decide_participant",
+    "event_windows_seconds",
+    "name_similarity",
+    "normalize_country",
+    "normalize_gender",
+    "normalize_name",
+    "normalize_participant_type",
+    "normalize_role",
+    "normalize_season",
+]

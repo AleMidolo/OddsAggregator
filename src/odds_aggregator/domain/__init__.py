@@ -1,5 +1,6 @@
 """Framework-free canonical domain model."""
 
+from .canonical_ids import canonical_entity_id
 from .models import (
     Bookmaker,
     Competition,
@@ -40,4 +41,5 @@ __all__ = [
     "SourceEntityType",
     "Sport",
     "build_observation_key",
+    "canonical_entity_id",
 ]
