@@ -8,12 +8,17 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
 
 from odds_aggregator.matching.models import (
+    CandidateDisposition,
+    CandidateEvidence,
     CompetitionCandidate,
     EventCandidate,
     EventParticipantCandidate,
+    MatchState,
     ParticipantCandidate,
 )
+from odds_aggregator.matching.service import StoredDecision
 
+from .matching_models import MatchCandidateRecord, MatchDecisionRecord
 from .models import (
     CompetitionAliasRecord,
     CompetitionRecord,
@@ -43,6 +48,40 @@ class MatchingReadMixin:
                 source_id=source_id,
             )
             return None if mapping is None else mapping.canonical_id
+
+    def lookup_decision(self, *, decision_key: str) -> StoredDecision | None:
+        with self._session_factory() as session:
+            record = session.scalar(
+                select(MatchDecisionRecord).where(MatchDecisionRecord.decision_key == decision_key)
+            )
+            if record is None:
+                return None
+            candidates = tuple(
+                CandidateEvidence(
+                    candidate_id=candidate.candidate_id,
+                    rank=candidate.rank,
+                    score=candidate.score,
+                    disposition=CandidateDisposition(candidate.disposition),
+                    reason_codes=tuple(candidate.reason_codes),
+                )
+                for candidate in session.scalars(
+                    select(MatchCandidateRecord)
+                    .where(MatchCandidateRecord.decision_id == record.id)
+                    .order_by(MatchCandidateRecord.rank.asc())
+                )
+            )
+            return StoredDecision(
+                decision_id=record.id,
+                source_fingerprint=record.source_fingerprint,
+                decision_key=record.decision_key,
+                state=MatchState(record.state),
+                canonical_id=record.canonical_id,
+                reason_code=record.reason_code,
+                best_score=record.best_score,
+                runner_up_score=record.runner_up_score,
+                evidence=dict(record.evidence),
+                candidates=candidates,
+            )
 
     def competition_candidates(self, *, sport_id: UUID) -> tuple[CompetitionCandidate, ...]:
         with self._session_factory() as session:
