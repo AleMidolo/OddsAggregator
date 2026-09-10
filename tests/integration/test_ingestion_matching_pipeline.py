@@ -17,6 +17,7 @@ from odds_aggregator.connectors import (
     SourceCompetition,
     SourceEvent,
     SourceEventParticipant,
+    SourceEventStatus,
     SourceMarket,
     SourceParticipant,
     SourcePrice,
@@ -167,13 +168,25 @@ def _connector(
     )
     return FakeBookmakerConnector(
         bookmaker_code=bookmaker_code,
-        sports=(SourceSport(sport_source_id, "Football", code="football"),),
+        sports=(
+            SourceSport(
+                source_id=sport_source_id,
+                name="Football",
+                code="football",
+            ),
+        ),
         events=(event,),
         markets_by_event={event_source_id: (market,)},
     )
 
 
-def _mapping_id(session: Session, *, bookmaker_id: UUID, entity_type: str, source_id: str) -> UUID:
+def _mapping_id(
+    session: Session,
+    *,
+    bookmaker_id: UUID,
+    entity_type: str,
+    source_id: str,
+) -> UUID:
     mapping = session.scalar(
         select(SourceEntityMappingRecord).where(
             SourceEntityMappingRecord.bookmaker_id == bookmaker_id,
@@ -304,7 +317,7 @@ def _ambiguous_connector() -> FakeBookmakerConnector:
     )
     return FakeBookmakerConnector(
         bookmaker_code="fixture-b",
-        sports=(SourceSport("sport-b", "Football", code="football"),),
+        sports=(SourceSport(source_id="sport-b", name="Football", code="football"),),
         events=(event,),
         markets_by_event={event.source_id: (market,)},
     )
@@ -375,3 +388,105 @@ async def test_ambiguous_parent_skips_dependent_market_path(engine) -> None:
         assert run is not None
         assert run.status == "partial"
         assert run.rejected_count == 1
+
+
+def _live_connector() -> FakeBookmakerConnector:
+    competition = SourceCompetition(
+        source_id="live-competition",
+        sport_source_id="live-sport",
+        name="Must Not Create",
+    )
+    participant_a = SourceParticipant(
+        source_id="live-a",
+        name="Live A",
+        participant_type="team",
+    )
+    participant_b = SourceParticipant(
+        source_id="live-b",
+        name="Live B",
+        participant_type="team",
+    )
+    event = SourceEvent(
+        source_id="live-event",
+        sport_source_id="live-sport",
+        competition_source_id=competition.source_id,
+        competition=competition,
+        name="Live A v Live B",
+        participants=(
+            SourceEventParticipant(source_id="live-a", participant=participant_a),
+            SourceEventParticipant(source_id="live-b", participant=participant_b),
+        ),
+        start_time=START,
+        status=SourceEventStatus.LIVE,
+        is_live=True,
+        source_updated_at=SOURCE_TIME,
+    )
+    market = SourceMarket(
+        source_id="live-market",
+        event_source_id=event.source_id,
+        market_type="moneyline",
+        period="full_time",
+        selections=(
+            SourceSelection(
+                source_id="live-selection",
+                label="A",
+                selection_type="home",
+                price=SourcePrice(decimal_odds=Decimal("2.00")),
+            ),
+        ),
+    )
+    return FakeBookmakerConnector(
+        bookmaker_code="fixture-b",
+        sports=(
+            SourceSport(source_id="live-sport", name="Football", code="football"),
+        ),
+        events=(event,),
+        markets_by_event={event.source_id: (market,)},
+    )
+
+
+@pytest.mark.asyncio
+async def test_live_sentinel_rejects_before_parent_matching(engine) -> None:
+    with Session(engine) as session, session.begin():
+        session.add(
+            BookmakerRecord(
+                id=BOOK_B,
+                code="fixture-b",
+                name="Fixture B",
+                enabled=True,
+                created_at=SOURCE_TIME,
+                updated_at=SOURCE_TIME,
+            )
+        )
+
+    connector = _live_connector()
+    service = ConnectorIngestionService(
+        SQLAlchemyIngestionStore(create_session_factory(engine)),
+        now=lambda: SOURCE_TIME + timedelta(hours=1),
+    )
+    result = await service.ingest(connector)
+
+    assert result.events_persisted == 0
+    assert result.events_skipped == 1
+    assert connector.attempts.get("get_markets", 0) == 0
+
+    with Session(engine) as session:
+        assert session.scalar(select(func.count()).select_from(CompetitionRecord)) == 0
+        assert session.scalar(select(func.count()).select_from(ParticipantRecord)) == 0
+        assert session.scalar(select(func.count()).select_from(EventRecord)) == 0
+        decision = session.scalar(
+            select(MatchDecisionRecord).where(MatchDecisionRecord.source_id == "live-event")
+        )
+        assert decision is not None
+        assert decision.state == "rejected"
+        assert decision.reason_code == "out_of_scope_live"
+        entity_mappings = tuple(
+            session.scalars(
+                select(SourceEntityMappingRecord).where(
+                    SourceEntityMappingRecord.entity_type.in_(
+                        ["competition", "participant", "event", "market"]
+                    )
+                )
+            )
+        )
+        assert not entity_mappings
