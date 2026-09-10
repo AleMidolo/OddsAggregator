@@ -16,6 +16,7 @@ from odds_aggregator.matching.service import (
     DecisionDraft,
     PersistenceResult,
     PrematchMatchingService,
+    StoredDecision,
 )
 
 SPORT = UUID("00000000-0000-0000-0000-000000000001")
@@ -32,12 +33,31 @@ class FakeStore:
         self.participants: tuple[ParticipantCandidate, ...] = ()
         self.events: tuple[EventCandidate, ...] = ()
         self.decisions: dict[str, UUID] = {}
+        self.decision_drafts: dict[str, DecisionDraft] = {}
         self.persist_calls = 0
 
     def lookup_mapping(
         self, *, bookmaker_id: UUID, entity_type: str, source_id: str
     ) -> UUID | None:
         return self.mappings.get((bookmaker_id, entity_type, source_id))
+
+    def lookup_decision(self, *, decision_key: str) -> StoredDecision | None:
+        decision_id = self.decisions.get(decision_key)
+        draft = self.decision_drafts.get(decision_key)
+        if decision_id is None or draft is None:
+            return None
+        return StoredDecision(
+            decision_id=decision_id,
+            source_fingerprint=draft.source_fingerprint,
+            decision_key=draft.decision_key,
+            state=draft.state,
+            canonical_id=draft.canonical_id,
+            reason_code=draft.reason_code,
+            best_score=draft.best_score,
+            runner_up_score=draft.runner_up_score,
+            evidence=draft.evidence,
+            candidates=draft.candidates,
+        )
 
     def competition_candidates(self, *, sport_id: UUID) -> tuple[CompetitionCandidate, ...]:
         return tuple(candidate for candidate in self.competitions if candidate.sport_id == sport_id)
@@ -95,6 +115,7 @@ class FakeStore:
         self.persist_calls += 1
         decision_id = UUID(int=len(self.decisions) + 100)
         decision_id = self.decisions.setdefault(decision.decision_key, decision_id)
+        self.decision_drafts.setdefault(decision.decision_key, decision)
         if plan.state in {MatchState.MATCHED, MatchState.CREATED}:
             assert plan.canonical_id is not None
             self.mappings[(bookmaker_id, entity_type, source_id)] = plan.canonical_id
@@ -142,6 +163,7 @@ def test_ambiguous_replay_reuses_decision_key_without_mapping() -> None:
     assert first.decision_id == replay.decision_id
     assert (BOOK_A, "participant", "source-x") not in store.mappings
     assert len(store.decisions) == 1
+    assert store.persist_calls == 1
 
 
 def test_ambiguous_decision_remains_authoritative_when_candidates_change() -> None:
@@ -179,6 +201,7 @@ def test_ambiguous_decision_remains_authoritative_when_candidates_change() -> No
     assert replay.decision_id == first.decision_id
     assert (BOOK_A, "participant", "stable-source") not in store.mappings
     assert len(store.decisions) == 1
+    assert store.persist_calls == 1
 
 
 def test_created_resolution_is_deterministic_and_then_reused() -> None:
