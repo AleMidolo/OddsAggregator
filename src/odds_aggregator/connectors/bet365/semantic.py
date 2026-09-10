@@ -288,20 +288,23 @@ def _consistent_total(raw_outcomes: Sequence[Mapping[str, object]]) -> Decimal |
 
 
 def _consistent_spread(raw_outcomes: Sequence[Mapping[str, object]]) -> Decimal | None:
-    home: Decimal | None = None
-    away: Decimal | None = None
+    home_values: set[Decimal] = set()
+    away_values: set[Decimal] = set()
     for outcome in raw_outcomes:
         outcome_type = _provider_token(outcome.get("type"))
         value = _decimal(outcome.get("spread"))
         if value is None:
             continue
         if outcome_type == "home":
-            home = value
+            home_values.add(value)
         elif outcome_type == "away":
-            away = value
-    if home is None or away is None or home != -away:
+            away_values.add(value)
+
+    if len(home_values) != 1 or len(away_values) != 1:
         return None
-    return home
+    home = next(iter(home_values))
+    away = next(iter(away_values))
+    return home if home == -away else None
 
 
 def _provider_token(value: object) -> str | None:
