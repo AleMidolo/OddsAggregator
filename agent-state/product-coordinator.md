@@ -19,19 +19,29 @@ Milestones M0, M1, and M2 are complete. Milestone M3 — multi-source prematch n
 - Connector-to-canonical ingestion with replay idempotency and append-only odds history.
 - Bet365 sport-identity correction from issue #11.
 - PR #10 merged to `main` as `616a3f72cf760b9636eff6b932ef48ef3898133c`.
-- Post-merge CI run #37 succeeded.
+
+## Coordination checkpoint — 2026-09-10
+
+- Latest `main` commit inspected: `7dc6014fc2463e0cd6bc414da3993c4e45cf9a0d` (`chore: record prematch-only scope decision`).
+- Latest CI run #46 on `main` completed successfully.
+- There are no open pull requests.
+- Historical branches from completed issues remain, but none represents active M3 work.
+- Product tracking issue #13 is closed as completed.
+- Active M3 issues #14, #15, #16, #17, and #18 were reviewed for dependencies and scope.
 
 ## Active M3 issues
 
-- #14 — prematch matching/canonicalization architecture contract — READY, highest priority. It must also align any residual live/in-play architecture assumptions with the prematch-only scope.
-- #15 — second permitted prematch source connector — READY in parallel.
-- #16 — competition/participant/event prematch matching — BLOCKED by #14.
-- #17 — prematch market/selection matching — BLOCKED by #14/#16 and requires #15 fixtures for real-source acceptance.
+- #14 — prematch matching/canonicalization architecture contract — READY, highest priority.
+- #15 — second permitted prematch source connector — READY in parallel; no active PR currently implements it.
+- #16 — competition/participant/event prematch matching — BLOCKED until #14 completes.
+- #17 — prematch market/selection matching — BLOCKED by #14/#16; #15 fixtures are required for real-source acceptance.
 - #18 — two-source prematch end-to-end QA reconciliation — BLOCKED by #14–#17.
 
 ## Coordination decision
 
-SOFTWARE ARCHITECT should take issue #14 next so backend matching code has authoritative normalization, ambiguity, confidence, persistence, and audit semantics that are explicitly prematch-only. BOOKMAKER INTEGRATION ENGINEER may independently proceed with issue #15 using only a documented permitted prematch automated access method.
+No new issue is needed. The roadmap, backlog, README, and active issue set are already consistent, and creating additional work now would duplicate existing ownership.
+
+SOFTWARE ARCHITECT should take issue #14 next. BOOKMAKER INTEGRATION ENGINEER may independently proceed with issue #15, but the single required handoff from this run is SOFTWARE ARCHITECT because #14 is the dependency that unlocks backend matching.
 
 ## Integration constraint
 
