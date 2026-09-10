@@ -14,7 +14,7 @@ Sportradar display/source text remains in `SourceMarket.name` and `SourceSelecti
 | current documented market ID `1` | `moneyline` | `full_time` | null |
 | market name `1x2_half_time` or current documented market ID `60` | `moneyline` | `first_half` | null |
 | market name `total` or current documented market ID `18` | `total` | `full_time` | common structured outcome `total` value |
-| market name `spread` | `spread` | `full_time` | structured home-side `spread` when home/away values are exact opposites |
+| market name `spread` | `spread` | `full_time` | one unique structured home-side `spread` when the unique away-side value is its exact opposite |
 
 When both recognized market-name and supported market-ID evidence are present, they must resolve to the same canonical semantics. A conflict leaves the market unsupported.
 
@@ -32,7 +32,7 @@ Selection types are accepted only within a supported market family:
 
 Other provider outcome types remain null as canonical `selection_type` values. Display labels and source IDs remain preserved.
 
-For totals, only the structured outcome `total` field is used as the threshold. If repeated thresholds disagree, the market is not promoted to canonical semantics. For spreads, only the structured outcome `spread` field is used; the market line is the signed home-side value and is accepted only when the away line is its exact opposite. No line is parsed from display text.
+For totals, only the structured outcome `total` field is used as the threshold. If repeated thresholds disagree, the market is not promoted to canonical semantics. For spreads, only the structured outcome `spread` field is used. The market is promoted only when all relevant outcomes identify exactly one unique home-side line and one unique away-side line and those values are exact opposites; repeated identical values are harmless, but multiple distinct home or away lines keep the market unsupported. No line is parsed from display text.
 
 ## Provider references
 
