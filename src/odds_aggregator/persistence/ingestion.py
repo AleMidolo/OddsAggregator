@@ -11,9 +11,12 @@ from sqlalchemy.orm import Session, sessionmaker
 from odds_aggregator.application.ingestion import (
     BookmakerIdentity,
     BookmakerNotConfiguredError,
+    EventIdentityResolution,
     EventIngestionBatch,
+    EventObservation,
     IngestionStore,
     PersistedBatchResult,
+    ResolvedEventIdentity,
     SelectionObservation,
     SportObservation,
 )
@@ -21,11 +24,11 @@ from odds_aggregator.domain.models import OddsQuote
 from odds_aggregator.domain.observations import build_observation_key
 
 from .ingestion_entities import (
-    persist_event_entities,
     persist_market_entity,
     persist_selection_entity,
     persist_sport_entity,
 )
+from .ingestion_matching import resolve_ingestion_event_identity
 from .ingestion_snapshots import persist_market_snapshot
 from .models import BookmakerRecord, ConnectorRunRecord
 from .repositories import SQLAlchemyHistoricalOddsRepository
@@ -90,21 +93,30 @@ class SQLAlchemyIngestionStore(IngestionStore):
                 seen_at=seen_at,
             )
 
+    def resolve_event_identity(
+        self,
+        *,
+        bookmaker_id: UUID,
+        event: EventObservation,
+        observed_at: datetime,
+    ) -> EventIdentityResolution:
+        return resolve_ingestion_event_identity(
+            self._session_factory,
+            bookmaker_id=bookmaker_id,
+            event=event,
+            observed_at=observed_at,
+        )
+
     def persist_event_batch(
         self,
         *,
         bookmaker_id: UUID,
         run_id: UUID,
+        identity: ResolvedEventIdentity,
         batch: EventIngestionBatch,
         observed_at: datetime,
     ) -> PersistedBatchResult:
         with self._session_factory() as session, session.begin():
-            context = persist_event_entities(
-                session,
-                bookmaker_id=bookmaker_id,
-                batch=batch,
-                seen_at=observed_at,
-            )
             odds = SQLAlchemyHistoricalOddsRepository(session)
             selections_persisted = 0
             quotes_appended = 0
@@ -117,7 +129,7 @@ class SQLAlchemyIngestionStore(IngestionStore):
                 market_id = persist_market_entity(
                     session,
                     bookmaker_id=bookmaker_id,
-                    event_id=context.event_id,
+                    event_id=identity.event_id,
                     market=market,
                     seen_at=observed_at,
                 )
@@ -127,9 +139,8 @@ class SQLAlchemyIngestionStore(IngestionStore):
                         session,
                         bookmaker_id=bookmaker_id,
                         market_id=market_id,
-                        sport_id=context.sport_id,
                         selection=selection,
-                        participant_ids=context.participant_ids,
+                        participant_ids=identity.participant_ids,
                         seen_at=observed_at,
                     )
                     selection_rows.append((selection_id, selection))
@@ -141,7 +152,7 @@ class SQLAlchemyIngestionStore(IngestionStore):
                     market_id=market_id,
                     run_id=run_id,
                     market=market,
-                    is_live=batch.event.is_live,
+                    is_live=False,
                     observed_at=observed_at,
                 )
                 for selection_id, selection in selection_rows:
@@ -187,14 +198,20 @@ class SQLAlchemyIngestionStore(IngestionStore):
         received_count: int,
         accepted_count: int,
         error_summary: str | None = None,
+        rejected_count: int = 0,
     ) -> None:
         with self._session_factory() as session, session.begin():
             record = session.get(ConnectorRunRecord, run_id)
             if record is None:
                 raise RuntimeError(f"connector run {run_id} does not exist")
             record.finished_at = finished_at
-            record.status = "succeeded" if succeeded else "failed"
+            if not succeeded:
+                record.status = "failed"
+            elif rejected_count:
+                record.status = "partial"
+            else:
+                record.status = "succeeded"
             record.received_count = received_count
             record.accepted_count = accepted_count
-            record.rejected_count = 0
+            record.rejected_count = rejected_count
             record.error_summary = error_summary
