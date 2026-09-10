@@ -44,6 +44,73 @@ _MARKET_ID_SEMANTICS: dict[str, _MarketSemantics] = {
     "60": _MarketSemantics("moneyline", "first_half"),
 }
 
+# Current Prematch v2 IDs whose documented semantics are intentionally not
+# represented by this adapter yet. They include scoped team totals, quarter or
+# half markets, overtime/extra-innings variants, and other structures that
+# cannot safely collapse into the currently supported prematch-v1 keys.
+#
+# When one of these IDs is present, its structured identity outranks a generic
+# provider name. This prevents, for example, market 225 (Total incl. overtime)
+# from being reinterpreted as ordinary full-time Total merely because a source
+# payload presents the shorter display name "total".
+_DOCUMENTED_UNSUPPORTED_MARKET_IDS = frozenset(
+    {
+        "11",
+        "14",
+        "19",
+        "20",
+        "23",
+        "26",
+        "47",
+        "64",
+        "66",
+        "68",
+        "69",
+        "70",
+        "74",
+        "83",
+        "94",
+        "219",
+        "220",
+        "223",
+        "225",
+        "227",
+        "228",
+        "231",
+        "232",
+        "234",
+        "235",
+        "236",
+        "251",
+        "256",
+        "260",
+        "261",
+        "274",
+        "275",
+        "276",
+        "293",
+        "294",
+        "302",
+        "303",
+        "304",
+        "1123",
+        "1124",
+        "6022",
+        "6023",
+        "6024",
+        "6025",
+        "6026",
+        "6027",
+        "6028",
+        "6029",
+        "6030",
+        "6031",
+        "6032",
+        "8010",
+        "8011",
+    }
+)
+
 _SELECTION_TYPES: dict[str, frozenset[str]] = {
     "moneyline": frozenset({"home", "away", "draw"}),
     "total": frozenset({"over", "under"}),
@@ -122,6 +189,8 @@ def _resolve_market_semantics(raw_market: Mapping[str, object]) -> _MarketSemant
     provider_id = _provider_market_numeric_id(raw_market.get("id"))
     by_id = _MARKET_ID_SEMANTICS.get(provider_id) if provider_id else None
 
+    if provider_id in _DOCUMENTED_UNSUPPORTED_MARKET_IDS:
+        return None
     if by_name is not None and by_id is not None and by_name != by_id:
         return None
     return by_id or by_name
