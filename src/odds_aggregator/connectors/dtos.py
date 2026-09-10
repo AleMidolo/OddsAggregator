@@ -86,12 +86,20 @@ class SourceEventParticipant(ConnectorDTO):
     source_id: str
     role: str | None = None
     position: int | None = None
+    participant: SourceParticipant | None = None
+
+    @model_validator(mode="after")
+    def participant_details_match_reference(self) -> SourceEventParticipant:
+        if self.participant is not None and self.participant.source_id != self.source_id:
+            raise ValueError("embedded participant source_id must match event participant source_id")
+        return self
 
 
 class SourceEvent(ConnectorDTO):
     source_id: str
     sport_source_id: str
     competition_source_id: str | None = None
+    competition: SourceCompetition | None = None
     name: str | None = None
     participants: tuple[SourceEventParticipant, ...] = ()
     start_time: AwareDatetime
@@ -99,6 +107,16 @@ class SourceEvent(ConnectorDTO):
     is_live: bool = False
     source_updated_at: AwareDatetime | None = None
     metadata: Mapping[str, object] = Field(default_factory=dict)
+
+    @model_validator(mode="after")
+    def competition_details_match_references(self) -> SourceEvent:
+        if self.competition is None:
+            return self
+        if self.competition.source_id != self.competition_source_id:
+            raise ValueError("embedded competition source_id must match event competition_source_id")
+        if self.competition.sport_source_id != self.sport_source_id:
+            raise ValueError("embedded competition sport_source_id must match event sport_source_id")
+        return self
 
 
 class SourcePrice(ConnectorDTO):
