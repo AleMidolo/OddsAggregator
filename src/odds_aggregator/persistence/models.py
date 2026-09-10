@@ -173,7 +173,7 @@ class OddsQuoteRecord(Base):
     snapshot_id: Mapped[UUID] = mapped_column(ForeignKey("market_snapshots.id"), nullable=False)
     bookmaker_id: Mapped[UUID] = mapped_column(ForeignKey("bookmakers.id"), nullable=False)
     selection_id: Mapped[UUID] = mapped_column(ForeignKey("selections.id"), nullable=False)
-    decimal_odds: Mapped[Decimal] = mapped_column(Numeric(18, 8), nullable=False)
+    decimal_odds: Mapped[Decimal | None] = mapped_column(Numeric(18, 8), nullable=True)
     is_available: Mapped[bool] = mapped_column(Boolean, nullable=False)
     observed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     source_updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
