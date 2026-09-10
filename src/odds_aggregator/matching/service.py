@@ -319,7 +319,9 @@ class PrematchMatchingService:
                 source_id=source_id,
             )
             if mapping is None or mapping != stored.canonical_id:
-                raise RuntimeError("accepted matching decision exists without its canonical mapping")
+                raise RuntimeError(
+                    "accepted matching decision exists without its canonical mapping"
+                )
             return MatchOutcome(MatchState.REUSED, mapping, "mapping_reused")
         return self._stored_outcome(stored)
 
