@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
 from datetime import datetime
 from uuid import UUID
 
@@ -84,7 +83,7 @@ def resolve_ingestion_event_identity(
             source=CompetitionInput(
                 source_id=competition.source_id,
                 sport_id=sport_id,
-                name=_matching_name(competition.name, competition.source_id),
+                name=competition.name or "",
                 country_code=competition.country_code,
                 season=competition.season,
             ),
@@ -104,7 +103,7 @@ def resolve_ingestion_event_identity(
             source=ParticipantInput(
                 source_id=participant.source_id,
                 sport_id=sport_id,
-                name=_matching_name(participant.name, participant.source_id),
+                name=participant.name or "",
                 participant_type=participant.participant_type,
             ),
         )
@@ -139,15 +138,6 @@ def resolve_ingestion_event_identity(
             participant_ids=participant_ids,
         )
     )
-
-
-def _matching_name(name: str | None, source_id: str) -> str:
-    if name is not None and name.strip():
-        return name
-    # Opaque source IDs such as ``provider:competitor:10`` can be deceptively similar
-    # to neighboring IDs. Hashing keeps legacy first-source creation deterministic while
-    # preventing those identifiers from becoming fuzzy semantic evidence.
-    return hashlib.sha256(source_id.encode("utf-8")).hexdigest()
 
 
 def _event_input(
