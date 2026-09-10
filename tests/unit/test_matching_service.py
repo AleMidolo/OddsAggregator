@@ -144,6 +144,43 @@ def test_ambiguous_replay_reuses_decision_key_without_mapping() -> None:
     assert len(store.decisions) == 1
 
 
+def test_ambiguous_decision_remains_authoritative_when_candidates_change() -> None:
+    store = FakeStore()
+    runner_up = UUID(int=258)
+    store.participants = (
+        ParticipantCandidate(CANONICAL, SPORT, "United City", "team"),
+        ParticipantCandidate(runner_up, SPORT, "United-City", "team"),
+    )
+    service = PrematchMatchingService(store, now=lambda: NOW)
+    source = ParticipantInput("stable-source", SPORT, "United City", "team")
+
+    first = service.resolve_participant(
+        bookmaker_id=BOOK_A,
+        bookmaker_code="book-a",
+        source=source,
+    )
+    assert first.state is MatchState.AMBIGUOUS
+    assert first.decision_id is not None
+
+    # The source fingerprint and rule version are unchanged, but the candidate
+    # landscape changes after the immutable decision was written. Ordinary
+    # replay must reuse that decision rather than silently create a mapping.
+    store.participants = (
+        ParticipantCandidate(CANONICAL, SPORT, "United City", "team"),
+    )
+    replay = service.resolve_participant(
+        bookmaker_id=BOOK_A,
+        bookmaker_code="book-a",
+        source=source,
+    )
+
+    assert replay.state is MatchState.AMBIGUOUS
+    assert replay.decision_key == first.decision_key
+    assert replay.decision_id == first.decision_id
+    assert (BOOK_A, "participant", "stable-source") not in store.mappings
+    assert len(store.decisions) == 1
+
+
 def test_created_resolution_is_deterministic_and_then_reused() -> None:
     store = FakeStore()
     service = PrematchMatchingService(store, now=lambda: NOW)
