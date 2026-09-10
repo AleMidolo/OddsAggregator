@@ -1,0 +1,128 @@
+[
+  {
+    "fixtureId": "op:fixture:eplay24-2001",
+    "status": {
+      "live": false,
+      "statusId": 0,
+      "statusName": "Pre-Game"
+    },
+    "sport": {
+      "sportId": 10,
+      "sportName": "Soccer"
+    },
+    "tournament": {
+      "tournamentId": 5017,
+      "tournamentName": "Premier League",
+      "categoryName": "England"
+    },
+    "season": {
+      "seasonId": null,
+      "seasonName": null,
+      "seasonRound": null
+    },
+    "venue": {
+      "venueId": null,
+      "venueName": null,
+      "venueLocation": null
+    },
+    "startTime": 1789066020,
+    "participants": {
+      "participant1Id": 90110,
+      "participant1Name": "Alpha-FC",
+      "participant1ShortName": "Alpha",
+      "participant1Abbr": "AFC",
+      "participant2Id": 90120,
+      "participant2Name": "Beta FC.",
+      "participant2ShortName": "Beta",
+      "participant2Abbr": "BFC"
+    },
+    "scores": {},
+    "clock": null,
+    "externalProviders": {},
+    "bookmakers": {
+      "eplay24.it": {
+        "bookmaker": "eplay24.it",
+        "bookmakerFixtureId": "ep24-fixture-771",
+        "fixturePath": null,
+        "hasOdds": true,
+        "staleOdds": false,
+        "staleOddsResponseCode": null,
+        "suspended": false,
+        "participantsRotated": false,
+        "meta": null,
+        "updatedAt": "2026-09-10T17:15:00Z"
+      }
+    }
+  },
+  {
+    "fixtureId": "op:fixture:eplay24-live",
+    "status": {
+      "live": true,
+      "statusId": 1,
+      "statusName": "Live"
+    },
+    "sport": {
+      "sportId": 10,
+      "sportName": "Soccer"
+    },
+    "tournament": {
+      "tournamentId": 5017,
+      "tournamentName": "Premier League",
+      "categoryName": "England"
+    },
+    "season": {},
+    "venue": {},
+    "startTime": 1789065000,
+    "participants": {
+      "participant1Id": 90300,
+      "participant1Name": "Live Home",
+      "participant2Id": 90400,
+      "participant2Name": "Live Away"
+    },
+    "scores": {},
+    "clock": {},
+    "externalProviders": {},
+    "bookmakers": {
+      "eplay24.it": {
+        "bookmaker": "eplay24.it",
+        "hasOdds": true,
+        "staleOdds": false,
+        "suspended": false,
+        "participantsRotated": false,
+        "updatedAt": "2026-09-10T17:15:00Z"
+      }
+    }
+  },
+  {
+    "fixtureId": "op:fixture:eplay24-malformed",
+    "status": {
+      "live": false,
+      "statusId": 0,
+      "statusName": "Pre-Game"
+    },
+    "sport": {
+      "sportId": 10,
+      "sportName": "Soccer"
+    },
+    "tournament": {
+      "tournamentId": 5017,
+      "tournamentName": "Premier League"
+    },
+    "season": {},
+    "venue": {},
+    "participants": {},
+    "scores": {},
+    "clock": null,
+    "externalProviders": {},
+    "bookmakers": {
+      "eplay24.it": {
+        "bookmaker": "eplay24.it",
+        "hasOdds": false,
+        "staleOdds": false,
+        "suspended": false,
+        "participantsRotated": false,
+        "updatedAt": "2026-09-10T17:15:00Z"
+      }
+    }
+  }
+]
