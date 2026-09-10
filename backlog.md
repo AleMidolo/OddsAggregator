@@ -2,32 +2,46 @@
 
 Priority is dependency-driven. `READY` means an agent can start without redefining an upstream contract. `BLOCKED` means the listed dependency must land first.
 
+## Active backlog
+
 | Priority | Issue / work item | Suggested Agent | Dependencies | State |
 |---|---|---|---|---|
-| P0 | #1 Bootstrap normalized domain and PostgreSQL persistence | BACKEND / DATA ENGINEER | Architecture baseline | READY |
-| P0 | #4 Establish CI and contract/resilience test harness | QA / RELEASE ENGINEER | None for CI scaffolding; #1/#2 for implementation-dependent tests | READY (partial) |
-| P0 | #2 Implement shared connector DTOs and ingestion resilience primitives | BACKEND / DATA ENGINEER | #1 package skeleton | BLOCKED |
-| P1 | #3 Add first permitted bookmaker/provider connector | BOOKMAKER INTEGRATION ENGINEER | #2 shared connector implementation + documented permitted access method | BLOCKED |
-| P1 | Validate reference connector end-to-end through persistence | QA / RELEASE ENGINEER | #1, #2, #3 | BLOCKED |
-| P2 | Add second permitted source connector | BOOKMAKER INTEGRATION ENGINEER | Reference connector validated | BLOCKED |
-| P2 | Implement participant/competition/event matching foundations | BACKEND / DATA ENGINEER | Stable normalized data + representative multi-source fixtures | BLOCKED |
-| P2 | Implement market/selection matching | BACKEND / DATA ENGINEER | Event matching + canonical market semantics | BLOCKED |
-| P3 | Implement historical odds query/read model | BACKEND / DATA ENGINEER | Stable append-only ingestion | BLOCKED |
-| P3 | Implement cross-bookmaker odds comparison | BACKEND / DATA ENGINEER | Multi-source matching + current odds queries | BLOCKED |
-| P4 | Implement arbitrage detection | BACKEND / DATA ENGINEER | Odds comparison | BLOCKED |
-| P4 | Implement alerts, line-movement analysis, and analytics | BACKEND / DATA ENGINEER | Historical/comparison foundations | BLOCKED |
+| P0 | #14 Define cross-source matching and canonicalization contract | SOFTWARE ARCHITECT | M1/M2 foundation complete | READY |
+| P0 | #15 Add a second permitted source for multi-source validation | BOOKMAKER INTEGRATION ENGINEER | Existing connector contract/runtime | READY (parallel) |
+| P0 | #16 Implement competition/participant/event matching foundation | BACKEND / DATA ENGINEER | #14 | BLOCKED |
+| P1 | #17 Implement canonical market/selection matching | BACKEND / DATA ENGINEER | #14, #16; #15 fixtures for real-source acceptance | BLOCKED |
+| P1 | #18 Validate multi-source reconciliation end to end | QA / RELEASE ENGINEER | #14, #15, #16, #17 | BLOCKED |
+| P2 | Historical odds query/read model | BACKEND / DATA ENGINEER | M3 validated matching | BLOCKED |
+| P2 | Latest/current odds retrieval and comparison service | BACKEND / DATA ENGINEER | M3 + historical/current query model | BLOCKED |
+| P3 | Line-movement analysis foundations | BACKEND / DATA ENGINEER | Historical query model | BLOCKED |
+| P3 | Arbitrage detection | BACKEND / DATA ENGINEER | Validated cross-bookmaker comparison | BLOCKED |
+| P4 | Alerts and analytics | BACKEND / DATA ENGINEER | Comparison/arbitrage/history foundations | BLOCKED |
+
+## Completed foundation
+
+- #1 normalized domain and PostgreSQL persistence — COMPLETE.
+- #2 shared connector DTOs and resilience primitives — COMPLETE.
+- #3 first permitted Bet365/Sportradar connector — COMPLETE.
+- #4 CI and contract/resilience QA foundation — COMPLETE.
+- #8 connector-to-canonical ingestion persistence path — COMPLETE.
+- #11 Bet365/Sportradar sport identity correction — COMPLETE.
+- First reference connector end-to-end PostgreSQL validation — COMPLETE.
+- Post-merge CI run #37 on merge commit `616a3f72cf760b9636eff6b932ef48ef3898133c` — GREEN.
 
 ## Current execution order
 
-1. **BACKEND / DATA ENGINEER → issue #1**.
-2. After #1 creates the package/project skeleton, continue with **BACKEND / DATA ENGINEER → issue #2**.
-3. **QA / RELEASE ENGINEER → issue #4** may scaffold CI in parallel, but must consume rather than invent shared production contracts.
-4. Only after #2 is implemented should **BOOKMAKER INTEGRATION ENGINEER → issue #3** implement a real connector, and only after confirming a permitted automated access method.
+1. **SOFTWARE ARCHITECT -> #14** to make matching semantics implementation-ready.
+2. **BOOKMAKER INTEGRATION ENGINEER -> #15** may proceed in parallel to establish a second permitted source and representative fixtures.
+3. **BACKEND / DATA ENGINEER -> #16** after #14.
+4. **BACKEND / DATA ENGINEER -> #17** after #16, consuming #15 fixtures for real-source-shaped validation.
+5. **QA / RELEASE ENGINEER -> #18** after the full M3 implementation path is available.
 
 ## Coordination constraints
 
-- Do not start broad bookmaker integration before connector contracts and conformance tests are stable.
-- Do not embed event/market matching logic inside bookmaker adapters.
-- Do not add bookmaker-specific DTO dependencies to core/domain/application layers.
-- Do not create work that bypasses CAPTCHAs, authentication/authorization, anti-bot controls, rate limits, geo-restrictions, or other access controls.
-- When a task is already covered by an active issue, branch, or PR, update/continue that work rather than creating a duplicate.
+- Matching logic belongs outside bookmaker adapters.
+- `SourceEntityMapping` remains the deterministic first lookup for previously resolved source entities.
+- Do not force ambiguous competitions, participants, events, markets, or selections into canonical identities.
+- Market matching must use structured semantics such as market type, period/scope, line, and selection role; provider display labels alone are insufficient.
+- New source integrations must document a permitted automated access method before implementation.
+- Do not bypass CAPTCHAs, authentication/authorization controls, anti-bot systems, rate limits, geo-restrictions, or other access controls.
+- When work is already covered by an active issue, branch, or PR, continue/update it rather than creating a duplicate.
