@@ -20,6 +20,7 @@ from odds_aggregator.connectors import (
 from odds_aggregator.connectors.bet365 import Bet365SportradarConnector
 from odds_aggregator.connectors.bet365.connector import JsonResponse, SportradarPrematchClient
 from odds_aggregator.connectors.eplay24 import Eplay24SportradarConnector
+from odds_aggregator.matching.normalization import normalize_name
 from odds_aggregator.testing.connector_contract import assert_connector_contract
 
 FIXTURE_ROOT = Path(__file__).parents[1] / "fixtures"
@@ -175,6 +176,21 @@ async def test_fixture_is_ready_for_cross_source_reconciliation_without_id_equal
     ]
     assert eplay_event.name != bet365_event.name
     assert abs(eplay_event.start_time - bet365_event.start_time) == timedelta(minutes=2)
+
+    eplay_names = [
+        participant.participant.name
+        for participant in eplay_event.participants
+        if participant.participant is not None
+    ]
+    bet365_names = [
+        participant.participant.name
+        for participant in bet365_event.participants
+        if participant.participant is not None
+    ]
+    assert eplay_names != bet365_names
+    assert [normalize_name(name) for name in eplay_names] == [
+        normalize_name(name) for name in bet365_names
+    ]
 
     eplay_market = (
         await eplay24.get_markets(
