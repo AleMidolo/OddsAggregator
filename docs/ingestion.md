@@ -1,51 +1,94 @@
 # Connector-to-canonical ingestion
 
-Issue #8 introduces the production application seam between shared connector DTOs and
-PostgreSQL persistence.
+The production ingestion seam consumes shared connector DTOs, resolves prematch canonical
+identity, and persists accepted markets and historical odds into PostgreSQL.
 
 ## Execution boundary
 
-`ConnectorIngestionService` owns connector orchestration. It resolves the configured
-bookmaker, fetches sports/events/markets asynchronously, and only then calls the
-synchronous `IngestionStore`. `SQLAlchemyIngestionStore` owns a fresh short transaction
-for each run-state update, sport write, or event/market persistence batch. A database
-transaction is therefore never held open across connector network I/O.
+`ConnectorIngestionService` owns asynchronous connector orchestration. It fetches sports and
+events, then calls the synchronous `IngestionStore` to resolve canonical event identity before
+fetching markets. Only accepted event identities proceed to `get_markets` and market persistence.
+
+All persistence and matching store calls own short local database transactions. No database
+transaction is held open across connector network I/O.
 
 The bookmaker row must already exist and be enabled under the connector's stable
 `bookmaker_code`.
 
-## First-source identity bootstrap
+## Prematch identity resolution
 
-Persistence always checks `SourceEntityMapping` first. If no mapping exists for a
-first-source entity, an internal UUID is derived deterministically from bookmaker,
-entity type, and exact source ID. Replays therefore resolve the same canonical entity
-without cross-bookmaker heuristics.
+Sports retain the original mapping-first bootstrap behavior. A stable canonical sport code may
+allow a second source sport ID to reuse an existing canonical sport.
 
-The current connector event contract carries participant and competition source IDs but
-not always their descriptive metadata. In that case the exact source ID is retained as
-a temporary source-derived label because the canonical schema requires a non-null name.
-No semantic name is guessed. A future authoritative DTO can replace that display label
-without changing the source mapping.
+Competition, participant, and event identities are resolved through `PrematchMatchingService`
+under `prematch-v1` in dependency order:
 
-Selections without a provider source ID receive a deterministic internal identity from
-their structured market/selection semantics. No source ID or source mapping is
-fabricated. Missing market type/period values are stored explicitly as `unknown`.
+1. canonical sport mapping;
+2. competition when present;
+3. event participants;
+4. event.
+
+Existing `SourceEntityMapping` rows are reused before scoring. For unseen identities, matching
+uses the existing deterministic candidate/scoring and immutable `MatchDecision` rules. Accepted
+`matched` and `created` resolutions produce canonical mappings. `ambiguous`, `unresolved`, and
+`rejected` outcomes remain unmapped and stop the dependent event path.
+
+An event rejected or deferred during identity resolution does not trigger a market request and
+cannot attach markets, selections, snapshots, or odds to a guessed canonical event. The
+connector run records the skipped event in `rejected_count` and completes as `partial` when the
+rest of the run succeeds.
+
+Accidental live input is rejected at the event matcher before competition or participant
+resolution, so a live sentinel cannot create prematch parent mappings as a side effect.
+
+## Identity evidence from event-first connectors
+
+The shared event DTO remains backward compatible with source-reference-only connectors.
+`SourceEvent` may optionally embed its matching-relevant `SourceCompetition`, and each
+`SourceEventParticipant` may optionally embed its `SourceParticipant`. These are shared DTOs,
+not provider payload objects.
+
+When embedded identity evidence is present, ingestion uses its name and supported metadata for
+cross-source matching. When it is absent, first-source creation falls back to the exact source ID
+as the non-semantic source label, preserving the earlier deterministic bootstrap behavior.
+Cross-source connectors should provide the shared identity evidence when their documented feed
+already exposes it; provider-specific extraction remains inside the connector package.
+
+The backend does not inspect arbitrary connector metadata to infer names or identity semantics.
+
+## Market and selection boundary
+
+Issue #22 resolves identity only through the canonical event level. Market and selection writes
+continue to reuse exact source mappings or deterministic source identities until issue #17 adds
+structural cross-source market/selection matching.
+
+Selection participant references may reuse participants already resolved for the event or an
+existing participant source mapping. Market persistence no longer creates participant identities
+implicitly.
+
+Selections without a provider source ID still receive a deterministic internal identity from
+their structured source semantics. No source ID or source mapping is fabricated.
 
 ## Historical observations
 
-Each market observation creates/reuses a deterministic `MarketSnapshot`. Selection
-quotes are append-only and use a deterministic observation key. When a provider
-`source_updated_at` timestamp is available, it is the replay identity timestamp, so
-retrieving the same provider observation later does not create duplicate history. If no
-source timestamp exists, the retrieval timestamp identifies the observation.
+Each accepted market observation creates or reuses a deterministic `MarketSnapshot`. Selection
+quotes remain append-only and use a deterministic observation key. When a provider
+`source_updated_at` timestamp is available, it is the replay identity timestamp, so retrieving
+the same provider observation later does not create duplicate history. If no source timestamp
+exists, the retrieval timestamp identifies the observation.
 
-Unavailable selections are persisted as `is_available = false` with
-`decimal_odds = NULL`. Migration `0002_nullable_unavailable_odds` makes that state
-representable without inventing a price. Available quotes still require decimal odds
-greater than 1.
+Unavailable selections are persisted as `is_available = false` with `decimal_odds = NULL`.
+Available quotes still require decimal odds greater than 1.
 
 ## Testing
 
-Backend tests use deterministic fake connector DTOs only. PostgreSQL integration tests
-verify mapping reuse, replay idempotency, append-only changed prices, null prices for
-unavailable selections, and connector-run audit records. CI never calls a live provider.
+CI uses deterministic fake connectors only. PostgreSQL integration coverage includes:
+
+- first-source replay and append-only changed-price behavior;
+- two source IDs converging onto one competition, participant set, and event;
+- mapping-first replay with immutable matching decisions;
+- ambiguous parent resolution producing no event/market write and no market network call;
+- connector-run partial/rejected accounting;
+- unavailable observations without fabricated prices.
+
+CI never calls a live bookmaker or provider service.
