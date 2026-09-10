@@ -19,9 +19,11 @@ from odds_aggregator.connectors.bet365.connector import JsonResponse
 from odds_aggregator.persistence import SQLAlchemyIngestionStore, create_session_factory
 from odds_aggregator.persistence.models import (
     BookmakerRecord,
+    CompetitionRecord,
     EventRecord,
     MarketRecord,
     OddsQuoteRecord,
+    ParticipantRecord,
     SelectionRecord,
     SourceEntityMappingRecord,
     SportRecord,
@@ -140,10 +142,18 @@ async def test_bet365_reference_fixture_flows_through_canonical_persistence(engi
 
     with Session(engine) as session:
         assert session.scalar(select(func.count()).select_from(SportRecord)) == 2
+        assert session.scalar(select(func.count()).select_from(CompetitionRecord)) == 1
+        assert session.scalar(select(func.count()).select_from(ParticipantRecord)) == 2
         assert session.scalar(select(func.count()).select_from(EventRecord)) == 1
         assert session.scalar(select(func.count()).select_from(MarketRecord)) == 2
         assert session.scalar(select(func.count()).select_from(SelectionRecord)) == 5
         assert session.scalar(select(func.count()).select_from(OddsQuoteRecord)) == 5
+
+        competition = session.scalar(select(CompetitionRecord))
+        assert competition is not None
+        assert competition.name == "Premier League"
+        participant_names = set(session.scalars(select(ParticipantRecord.name)))
+        assert participant_names == {"Alpha FC", "Beta FC"}
 
         sport_mappings = session.scalars(
             select(SourceEntityMappingRecord)
