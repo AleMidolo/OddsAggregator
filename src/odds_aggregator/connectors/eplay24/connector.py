@@ -213,7 +213,9 @@ class Eplay24OddsPapiConnector:
             raise ConnectorConfigurationError("OddsPapi fixture feed does not use cursors")
         params: dict[str, str] = {"bookmakers": EPLAY24_BOOKMAKER_SLUG}
         if request.sport_source_id is not None:
-            params["sportId"] = str(_required_numeric_id(request.sport_source_id, "sport_source_id"))
+            params["sportId"] = str(
+                _required_numeric_id(request.sport_source_id, "sport_source_id")
+            )
         if request.competition_source_id is not None:
             params["tournamentId"] = str(
                 _required_numeric_id(request.competition_source_id, "competition_source_id")
