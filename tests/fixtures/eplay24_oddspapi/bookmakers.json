@@ -1,0 +1,16 @@
+[
+  {
+    "slug": "eplay24.it",
+    "bookmakerName": "Eplay24 IT",
+    "active": true,
+    "websocketPregame": true,
+    "websocketLive": false,
+    "maxDelayPregameInSec": 30,
+    "availableCountries": ["IT"]
+  },
+  {
+    "slug": "other-book",
+    "bookmakerName": "Other Book",
+    "active": true
+  }
+]
