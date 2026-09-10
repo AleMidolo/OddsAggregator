@@ -2,7 +2,7 @@
 
 This roadmap is dependency-driven. **OddsAggregator is a prematch-only platform. Live/in-play matches and live/in-play odds are out of scope for all milestones unless product scope is explicitly changed in the future.**
 
-The normalized architecture, connector boundary, persistence semantics, and CI are established; the project is now advancing from one validated prematch source to multi-source canonicalization and matching.
+The normalized architecture, connector boundary, persistence semantics, CI, and event-level prematch matching path are established. The project is now completing market/selection semantics and a second permitted source before end-to-end multi-source acceptance.
 
 ## Milestone M0 — Architecture baseline
 
@@ -40,8 +40,7 @@ Completed deliverables:
 - sanitized deterministic fixtures and shared connector-contract coverage;
 - provider-specific payload isolation;
 - source identity correction from issue #11;
-- fixture-based Bet365/Sportradar connector -> production ingestion -> canonical PostgreSQL validation;
-- green post-merge CI on the production ingestion merge.
+- fixture-based Bet365/Sportradar connector -> production ingestion -> canonical PostgreSQL validation.
 
 Completed issues include #3 and #11. No live/in-play extension is planned.
 
@@ -51,18 +50,25 @@ Completed issues include #3 and #11. No live/in-play extension is planned.
 
 Goal: reconcile equivalent prematch entities across at least two permitted bookmaker/provider sources without relying on bookmaker-specific models or unsafe guessing.
 
-Primary work:
-- #14 Architecture: define cross-source matching and canonicalization contract — **READY / highest priority**;
+Completed M3 foundation:
+- #14 Architecture: authoritative `prematch-v1` cross-source matching/canonicalization contract — **COMPLETE**;
+- ADR 0002 matching decision/audit persistence — **COMPLETE**;
+- #16 Backend: competition, participant, and event matching foundation — **COMPLETE**;
+- #22 Backend: integrate prematch matching into production connector ingestion — **COMPLETE**;
+- #24 Bookmaker: expose Bet365/Sportradar competition/participant identity evidence — **COMPLETE**.
+
+Remaining work:
+- #19 Bookmaker: normalize Bet365/Sportradar prematch market semantics — **READY / highest priority**;
 - #15 Bookmaker integration: add a second permitted prematch source — **READY in parallel**;
-- #16 Backend: competition, participant, and event matching — **BLOCKED by #14**;
-- #17 Backend: canonical market and selection matching — **BLOCKED by #14 and #16**;
-- #18 QA: validate two-source reconciliation end to end — **BLOCKED by #14–#17**.
+- #17 Backend: canonical market and selection matching — **READY for synthetic implementation; real-source acceptance depends on #15 and #19**;
+- #18 QA: two-source reconciliation end to end — **BLOCKED by #15, #17, and #19**.
 
 Exit criteria:
-- at least two permitted prematch source connectors provide representative overlapping data;
+- at least two permitted prematch sources provide representative overlapping data;
 - exact source mappings are reused deterministically;
-- competition/participant/event candidates resolve according to explicit evidence and ambiguity rules;
-- canonical market/selection matching uses structured semantics rather than display labels;
+- competition/participant/event matching follows `prematch-v1` and is integrated into production ingestion;
+- both source connectors emit safe structured market/selection semantics;
+- canonical market/selection matching uses structured keys rather than provider display labels;
 - ambiguous or unsupported data remains unresolved instead of being guessed;
 - replay is idempotent and matching decisions are auditable;
 - deterministic two-source CI validates reconciliation, failure isolation, and historical-odds integrity.
@@ -80,7 +86,7 @@ Planned deliverables:
 - prematch line-movement foundations;
 - freshness/source-quality telemetry.
 
-Entry condition: M3 matching must be sufficiently validated so comparison does not combine unrelated events/markets.
+Entry condition: M3 matching must be validated so comparison never combines unrelated events, markets, or selections.
 
 ## Milestone M5 — Prematch arbitrage, alerts, and analytics
 
@@ -97,4 +103,4 @@ Planned deliverables:
 
 ## Sequencing rule
 
-Do not optimize for connector count at the expense of canonical correctness. New integrations must use permitted prematch access methods and shared conformance tests. Matching remains outside adapters, ambiguity must be explicit, and odds comparison/arbitrage work must not precede validated multi-source identity reconciliation. Live/in-play support is not a roadmap item.
+Correct canonical semantics take priority over connector count. Resolve known connector conformance gaps before treating source data as matching evidence. New integrations must use permitted prematch access methods and shared conformance tests. Matching remains outside adapters, ambiguity must be explicit, and odds comparison/arbitrage work must not precede validated multi-source identity reconciliation. Live/in-play support is not a roadmap item.
