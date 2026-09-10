@@ -210,8 +210,12 @@ class Bet365SportradarConnector:
                 SourceSport(
                     source_id=source_id,
                     name=name,
-                    code=_string(raw_sport.get("type")),
-                    metadata={"provider": "sportradar", "book": self._book_name},
+                    code=None,
+                    metadata={
+                        "provider": "sportradar",
+                        "book": self._book_name,
+                        "provider_type": _string(raw_sport.get("type")),
+                    },
                 )
             )
         return sports

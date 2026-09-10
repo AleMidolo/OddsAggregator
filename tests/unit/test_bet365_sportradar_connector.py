@@ -74,6 +74,19 @@ async def test_bet365_fixture_connector_satisfies_shared_contract() -> None:
 
 
 @pytest.mark.asyncio
+async def test_sports_do_not_use_generic_provider_type_as_unique_code() -> None:
+    connector = _connector()
+    sports = await connector.list_sports()
+
+    assert [(sport.source_id, sport.name) for sport in sports] == [
+        ("sr:sport:1", "Soccer"),
+        ("sr:sport:2", "Basketball"),
+    ]
+    assert [sport.code for sport in sports] == [None, None]
+    assert [sport.metadata["provider_type"] for sport in sports] == ["team", "team"]
+
+
+@pytest.mark.asyncio
 async def test_malformed_event_is_isolated_and_pagination_is_preserved() -> None:
     connector = _connector()
     result = await connector.list_events(
