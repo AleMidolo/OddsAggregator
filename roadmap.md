@@ -1,84 +1,84 @@
 # OddsAggregator Roadmap
 
-This roadmap is dependency-driven. The normalized architecture and bookmaker-adapter boundary must remain stable before broad bookmaker integration work begins.
+This roadmap is dependency-driven. The normalized architecture, connector boundary, persistence semantics, and CI are established; the project is now advancing from one validated source to multi-source canonicalization and matching.
 
 ## Milestone M0 — Architecture baseline
 
 **Status: COMPLETE**
 
-Goal: establish the common technical architecture and normalized bookmaker/provider boundary.
-
 Completed deliverables:
-- modular-monolith architecture and technology baseline;
-- normalized domain and persistence semantics;
+- Python modular-monolith architecture and technology baseline;
+- normalized domain/persistence semantics;
 - bookmaker connector boundary and resilience rules;
 - ADR 0001;
-- implementation-ready connector contract specification;
-- initial backend, integration, and QA issues (#1–#4).
+- implementation-ready connector contract specification.
 
 ## Milestone M1 — Core normalized platform
 
-**Status: IN PROGRESS**
+**Status: COMPLETE**
 
-Goal: implement the bookmaker-agnostic domain, persistence, connector DTOs, and ingestion resilience foundations.
+Completed deliverables:
+- normalized domain with no bookmaker-specific dependencies;
+- PostgreSQL schema/migrations and source mappings;
+- append-only/idempotent historical odds persistence;
+- shared connector DTOs and typed errors;
+- per-bookmaker timeout, retry, rate-limit, concurrency, and circuit behavior;
+- deterministic connector-to-canonical ingestion with network/transaction separation;
+- GitHub Actions CI covering Ruff, strict mypy, PostgreSQL/Alembic, and pytest.
 
-Primary issues:
-- #1 Backend: bootstrap normalized domain and PostgreSQL persistence — **READY / highest priority**;
-- #2 Backend: implement shared connector DTOs and ingestion resilience primitives — **BLOCKED until #1 establishes the package skeleton, then READY**;
-- #4 QA: establish CI and architecture-level contract/resilience test harness — **READY for CI scaffolding; integration-dependent portions follow #1/#2**.
-
-Exit criteria:
-- normalized domain exists with no bookmaker-specific dependencies;
-- PostgreSQL migrations create the initial schema;
-- source mappings and odds observations are idempotent;
-- connector protocol/DTO/error taxonomy are implemented;
-- per-bookmaker timeout, retry, rate-limit, concurrency, and circuit behavior exist;
-- CI validates lint/type/tests without live bookmaker dependencies.
+Completed issues include #1, #2, #4, and #8.
 
 ## Milestone M2 — First permitted reference connector
 
-**Status: BLOCKED by M1**
+**Status: COMPLETE**
 
-Goal: validate the architecture end-to-end with one bookmaker/provider that has a permitted automated integration method.
+Completed deliverables:
+- Bet365 reference connector through the permitted Sportradar Odds Comparison Prematch v2 boundary;
+- documented authentication/entitlement and rate-limit handling;
+- sanitized deterministic fixtures and shared connector-contract coverage;
+- provider-specific payload isolation;
+- source identity correction from issue #11;
+- fixture-based Bet365/Sportradar connector -> production ingestion -> canonical PostgreSQL validation;
+- green post-merge CI on the production ingestion merge.
 
-Primary issue:
-- #3 Bookmaker integration: add first permitted connector after shared contract lands.
-
-Before implementation, the integration engineer must document the source's permitted access method, authentication requirements, and known rate limits. If permission for automated access cannot be established, that source must not be integrated.
-
-Exit criteria:
-- one real connector implements the shared contract;
-- provider-specific models remain inside the adapter;
-- sanitized fixtures and contract tests exist;
-- normalized data can flow through ingestion and persistence;
-- one connector failure does not disrupt another connector execution path.
+Completed issues include #3 and #11. The current reference source is prematch-only and does not imply live Bet365 entitlement.
 
 ## Milestone M3 — Multi-source normalization and matching
 
-**Status: FUTURE**
+**Status: IN PROGRESS**
 
-Goal: support equivalent entities across at least two permitted sources.
+Goal: reconcile equivalent entities across at least two permitted bookmaker/provider sources without relying on bookmaker-specific models or unsafe guessing.
 
-Planned deliverables:
-- second permitted connector;
-- deterministic source mapping reuse;
-- participant, competition, and event candidate matching;
-- canonical market/selection matching based on structured semantics;
-- confidence and ambiguity handling;
-- reconciliation tests and auditability.
+Primary work:
+- #14 Architecture: define cross-source matching and canonicalization contract — **READY / highest priority**;
+- #15 Bookmaker integration: add a second permitted source — **READY in parallel**;
+- #16 Backend: competition, participant, and event matching — **BLOCKED by #14**;
+- #17 Backend: canonical market and selection matching — **BLOCKED by #14 and #16**;
+- #18 QA: validate two-source reconciliation end to end — **BLOCKED by #14–#17**.
+
+Exit criteria:
+- at least two permitted source connectors provide representative overlapping data;
+- exact source mappings are reused deterministically;
+- competition/participant/event candidates resolve according to explicit evidence and ambiguity rules;
+- canonical market/selection matching uses structured semantics rather than display labels;
+- ambiguous or unsupported data remains unresolved instead of being guessed;
+- replay is idempotent and matching decisions are auditable;
+- deterministic two-source CI validates reconciliation, failure isolation, and historical-odds integrity.
 
 ## Milestone M4 — Historical odds and comparison
 
 **Status: FUTURE**
 
-Goal: expose reliable current and historical normalized odds across sources.
+Goal: expose reliable current and historical normalized odds across matched sources.
 
 Planned deliverables:
-- historical query services;
+- historical odds query/read model;
 - latest-odds retrieval;
 - cross-bookmaker odds comparison;
 - line-movement foundations;
 - freshness/source-quality telemetry.
+
+Entry condition: M3 matching must be sufficiently validated so comparison does not combine unrelated events/markets.
 
 ## Milestone M5 — Arbitrage, alerts, and analytics
 
@@ -95,4 +95,4 @@ Planned deliverables:
 
 ## Sequencing rule
 
-Do not optimize for the number of bookmaker connectors before the normalized core, connector contract, persistence behavior, and CI are validated. Architecture correctness and repeatable connector conformance take priority over integration count.
+Do not optimize for connector count at the expense of canonical correctness. New integrations must use permitted access methods and shared conformance tests. Matching remains outside adapters, ambiguity must be explicit, and odds comparison/arbitrage work must not precede validated multi-source identity reconciliation.
