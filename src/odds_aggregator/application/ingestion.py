@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from decimal import Decimal
@@ -41,13 +41,15 @@ class SportObservation:
 @dataclass(frozen=True, slots=True)
 class CompetitionObservation:
     source_id: str
-    name: str
+    name: str | None
+    country_code: str | None = None
+    season: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
 class ParticipantObservation:
     source_id: str
-    name: str
+    name: str | None
     participant_type: str | None
     role: str | None
     position: int | None
@@ -93,6 +95,19 @@ class EventObservation:
 
 
 @dataclass(frozen=True, slots=True)
+class ResolvedEventIdentity:
+    event_id: UUID
+    sport_id: UUID
+    participant_ids: Mapping[str, UUID]
+
+
+@dataclass(frozen=True, slots=True)
+class EventIdentityResolution:
+    identity: ResolvedEventIdentity | None
+    reason_code: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
 class EventIngestionBatch:
     event: EventObservation
     markets: tuple[MarketObservation, ...]
@@ -111,6 +126,7 @@ class IngestionResult:
     bookmaker_code: str
     sports_persisted: int
     events_persisted: int
+    events_skipped: int
     markets_persisted: int
     selections_persisted: int
     quotes_appended: int
@@ -138,11 +154,20 @@ class IngestionStore(Protocol):
         seen_at: datetime,
     ) -> UUID: ...
 
+    def resolve_event_identity(
+        self,
+        *,
+        bookmaker_id: UUID,
+        event: EventObservation,
+        observed_at: datetime,
+    ) -> EventIdentityResolution: ...
+
     def persist_event_batch(
         self,
         *,
         bookmaker_id: UUID,
         run_id: UUID,
+        identity: ResolvedEventIdentity,
         batch: EventIngestionBatch,
         observed_at: datetime,
     ) -> PersistedBatchResult: ...
@@ -156,11 +181,12 @@ class IngestionStore(Protocol):
         received_count: int,
         accepted_count: int,
         error_summary: str | None = None,
+        rejected_count: int = 0,
     ) -> None: ...
 
 
 class ConnectorIngestionService:
-    """Fetch connector DTOs, then persist each logical batch outside network I/O."""
+    """Fetch connector DTOs and persist accepted prematch identities and odds."""
 
     def __init__(
         self,
@@ -189,6 +215,7 @@ class ConnectorIngestionService:
 
         sports_persisted = 0
         events_persisted = 0
+        events_skipped = 0
         markets_persisted = 0
         selections_persisted = 0
         quotes_appended = 0
@@ -214,13 +241,29 @@ class ConnectorIngestionService:
                         )
                     )
                     for source_event in event_result.events:
+                        event = _event_observation(source_event)
+                        resolution = self._store.resolve_event_identity(
+                            bookmaker_id=bookmaker.id,
+                            event=event,
+                            observed_at=self._now(),
+                        )
+                        if resolution.identity is None:
+                            events_skipped += 1
+                            continue
+
                         source_markets = await self._fetch_markets(
                             connector, source_event.source_id
                         )
                         batch_result = self._store.persist_event_batch(
                             bookmaker_id=bookmaker.id,
                             run_id=run_id,
-                            batch=_event_batch(source_event, source_markets),
+                            identity=resolution.identity,
+                            batch=EventIngestionBatch(
+                                event=event,
+                                markets=tuple(
+                                    _market_observation(market) for market in source_markets
+                                ),
+                            ),
                             observed_at=self._now(),
                         )
                         events_persisted += 1
@@ -237,9 +280,15 @@ class ConnectorIngestionService:
                 run_id=run_id,
                 finished_at=self._now(),
                 succeeded=False,
-                received_count=events_persisted + markets_persisted + selections_persisted,
+                received_count=(
+                    events_persisted
+                    + events_skipped
+                    + markets_persisted
+                    + selections_persisted
+                ),
                 accepted_count=quotes_appended,
                 error_summary=str(error)[:1000],
+                rejected_count=events_skipped,
             )
             raise
 
@@ -247,14 +296,18 @@ class ConnectorIngestionService:
             run_id=run_id,
             finished_at=self._now(),
             succeeded=True,
-            received_count=events_persisted + markets_persisted + selections_persisted,
+            received_count=(
+                events_persisted + events_skipped + markets_persisted + selections_persisted
+            ),
             accepted_count=quotes_appended,
+            rejected_count=events_skipped,
         )
         return IngestionResult(
             run_id=run_id,
             bookmaker_code=bookmaker.code,
             sports_persisted=sports_persisted,
             events_persisted=events_persisted,
+            events_skipped=events_skipped,
             markets_persisted=markets_persisted,
             selections_persisted=selections_persisted,
             quotes_appended=quotes_appended,
@@ -281,41 +334,41 @@ def _sport_observation(source: SourceSport) -> SportObservation:
     return SportObservation(source_id=source.source_id, name=source.name, code=source.code)
 
 
-def _event_batch(
-    source_event: SourceEvent,
-    source_markets: tuple[SourceMarket, ...],
-) -> EventIngestionBatch:
+def _event_observation(source_event: SourceEvent) -> EventObservation:
     competition = None
     if source_event.competition_source_id is not None:
+        details = source_event.competition
         competition = CompetitionObservation(
             source_id=source_event.competition_source_id,
-            name=source_event.competition_source_id,
+            name=None if details is None else details.name,
+            country_code=None if details is None else details.country_code,
+            season=None if details is None else details.season,
         )
 
     participants = tuple(
         ParticipantObservation(
-            source_id=participant.source_id,
-            name=participant.source_id,
-            participant_type=None,
-            role=participant.role,
-            position=participant.position,
+            source_id=reference.source_id,
+            name=None if reference.participant is None else reference.participant.name,
+            participant_type=(
+                None
+                if reference.participant is None
+                else reference.participant.participant_type
+            ),
+            role=reference.role,
+            position=reference.position,
         )
-        for participant in source_event.participants
+        for reference in source_event.participants
     )
-    markets = tuple(_market_observation(market) for market in source_markets)
-    return EventIngestionBatch(
-        event=EventObservation(
-            source_id=source_event.source_id,
-            sport_source_id=source_event.sport_source_id,
-            competition=competition,
-            name=source_event.name,
-            participants=participants,
-            start_time=source_event.start_time,
-            status=source_event.status,
-            is_live=source_event.is_live,
-            source_updated_at=source_event.source_updated_at,
-        ),
-        markets=markets,
+    return EventObservation(
+        source_id=source_event.source_id,
+        sport_source_id=source_event.sport_source_id,
+        competition=competition,
+        name=source_event.name,
+        participants=participants,
+        start_time=source_event.start_time,
+        status=source_event.status,
+        is_live=source_event.is_live,
+        source_updated_at=source_event.source_updated_at,
     )
 
 
