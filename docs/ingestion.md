@@ -49,11 +49,15 @@ The shared event DTO remains backward compatible with source-reference-only conn
 not provider payload objects.
 
 When embedded identity evidence is present, ingestion uses its name and supported metadata for
-cross-source matching. When descriptive identity evidence is absent, ingestion derives a
-stable opaque hash label from the exact source ID and still resolves through the matcher. This
-preserves deterministic first-source creation while preventing provider IDs with common prefixes
-from becoming accidental fuzzy-name evidence. The original source ID remains preserved in
-`SourceEntityMapping`.
+cross-source matching. Missing descriptive competition or participant evidence is not replaced
+with a source ID, hash, or other synthetic semantic label. Instead, the empty semantic name is
+passed through the authoritative `prematch-v1` matcher, which audits the identity as
+`rejected / invalid_name` when no prior source mapping exists. The dependent event path then
+stops before market access or persistence.
+
+Already-accepted source mappings remain mapping-first and are reused before scoring, so a
+previously resolved identity does not regress solely because a later observation omits optional
+descriptive evidence.
 
 Cross-source connectors should provide the shared identity evidence when their documented feed
 already exposes it; provider-specific extraction remains inside the connector package. The
@@ -85,12 +89,14 @@ Available quotes still require decimal odds greater than 1.
 
 ## Testing
 
-CI uses deterministic fake connectors only. PostgreSQL integration coverage includes:
+CI uses deterministic fake connectors and sanitized provider fixtures only. PostgreSQL
+integration coverage includes:
 
 - first-source replay and append-only changed-price behavior;
 - two source IDs converging onto one competition, participant set, and event;
 - mapping-first replay with immutable matching decisions;
 - ambiguous parent resolution producing no event/market write and no market network call;
+- missing competition/participant descriptive evidence producing audited `invalid_name` rejection;
 - connector-run partial/rejected accounting;
 - live-sentinel rejection before parent identity resolution;
 - unavailable observations without fabricated prices.
