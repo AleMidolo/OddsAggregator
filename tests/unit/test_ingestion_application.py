@@ -9,7 +9,9 @@ import pytest
 from odds_aggregator.application.ingestion import (
     BookmakerIdentity,
     ConnectorIngestionService,
+    EventIdentityResolution,
     PersistedBatchResult,
+    ResolvedEventIdentity,
 )
 from odds_aggregator.connectors import (
     ConnectorHealth,
@@ -28,8 +30,9 @@ NOW = datetime(2026, 9, 9, 12, tzinfo=UTC)
 
 
 class RecordingStore:
-    def __init__(self) -> None:
+    def __init__(self, *, accept_event: bool = True) -> None:
         self.active = False
+        self.accept_event = accept_event
         self.calls: list[str] = []
 
     def _record(self, name: str) -> None:
@@ -48,6 +51,18 @@ class RecordingStore:
     def persist_sport(self, **_: object) -> UUID:
         self._record("store:sport")
         return UUID(int=2)
+
+    def resolve_event_identity(self, **_: object) -> EventIdentityResolution:
+        self._record("store:identity")
+        if not self.accept_event:
+            return EventIdentityResolution(identity=None, reason_code="participant:ambiguous")
+        return EventIdentityResolution(
+            identity=ResolvedEventIdentity(
+                event_id=UUID(int=3),
+                sport_id=UUID(int=2),
+                participant_ids={"team-a": UUID(int=4), "team-b": UUID(int=5)},
+            )
+        )
 
     def persist_event_batch(self, **_: object) -> PersistedBatchResult:
         self._record("store:batch")
@@ -126,20 +141,46 @@ class RecordingConnector:
 
 
 @pytest.mark.asyncio
-async def test_network_calls_happen_between_short_store_calls() -> None:
+async def test_identity_resolution_happens_between_network_calls() -> None:
     store = RecordingStore()
     result = await ConnectorIngestionService(store, now=lambda: NOW).ingest(
         RecordingConnector(store)
     )
 
     assert result.quotes_appended == 1
+    assert result.events_skipped == 0
     assert store.calls == [
         "store:resolve",
         "store:start",
         "network:list_sports",
         "store:sport",
         "network:list_events",
+        "store:identity",
         "network:get_markets",
         "store:batch",
+        "store:finish",
+    ]
+
+
+@pytest.mark.asyncio
+async def test_nonaccepted_identity_skips_market_fetch_and_persistence() -> None:
+    store = RecordingStore(accept_event=False)
+    result = await ConnectorIngestionService(store, now=lambda: NOW).ingest(
+        RecordingConnector(store)
+    )
+
+    assert result.events_persisted == 0
+    assert result.events_skipped == 1
+    assert result.markets_persisted == 0
+    assert result.quotes_appended == 0
+    assert "network:get_markets" not in store.calls
+    assert "store:batch" not in store.calls
+    assert store.calls == [
+        "store:resolve",
+        "store:start",
+        "network:list_sports",
+        "store:sport",
+        "network:list_events",
+        "store:identity",
         "store:finish",
     ]
