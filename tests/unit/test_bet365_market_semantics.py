@@ -145,6 +145,32 @@ async def test_supported_spread_uses_structured_home_perspective_line() -> None:
 
 
 @pytest.mark.asyncio
+async def test_multiple_spread_lines_are_not_collapsed_to_last_pair() -> None:
+    payload = _market_payload(
+        market_id="sr:market:999",
+        name="spread",
+        outcomes=[
+            {"id": "home-1", "type": "home", "spread": -1.5, "odds_decimal": "1.90"},
+            {"id": "away-1", "type": "away", "spread": 1.5, "odds_decimal": "1.95"},
+            {"id": "home-2", "type": "home", "spread": -2.5, "odds_decimal": "2.10"},
+            {"id": "away-2", "type": "away", "spread": 2.5, "odds_decimal": "1.75"},
+        ],
+    )
+    connector = Bet365SportradarConnector(client=PayloadClient(payload))
+
+    market = (
+        await connector.get_markets(MarketFeedRequest(event_source_id="sr:sport_event:1001"))
+    ).markets[0]
+
+    assert market.name == "spread"
+    assert market.market_type is None
+    assert market.period is None
+    assert market.scope is None
+    assert market.line is None
+    assert all(selection.selection_type is None for selection in market.selections)
+
+
+@pytest.mark.asyncio
 async def test_unknown_market_preserves_display_data_but_not_canonical_tokens() -> None:
     payload = _market_payload(
         market_id="sr:market:999",
