@@ -113,30 +113,33 @@ def decide_event(
             reason_code="invalid_participant_shape",
             evidence={"resolved_participant_count": len(participant_ids)},
         )
-    source_roles = [
+    source_role_tokens = [
         normalize_role(participant.role)
         for participant in source.participants
         if normalize_role(participant.role) is not None
     ]
-    if len(source_roles) != len(set(source_roles)):
+    if len(source_role_tokens) != len(set(source_role_tokens)):
         return DecisionPlan(
             state=MatchState.REJECTED,
             canonical_id=None,
             reason_code="invalid_participant_role_shape",
-            evidence={"duplicate_role_count": len(source_roles) - len(set(source_roles))},
+            evidence={
+                "duplicate_role_count": len(source_role_tokens) - len(set(source_role_tokens))
+            },
         )
-    source_positions = [
+    source_position_values = [
         participant.position
         for participant in source.participants
         if participant.position is not None
     ]
-    if len(source_positions) != len(set(source_positions)):
+    if len(source_position_values) != len(set(source_position_values)):
         return DecisionPlan(
             state=MatchState.REJECTED,
             canonical_id=None,
             reason_code="invalid_participant_position_shape",
             evidence={
-                "duplicate_position_count": len(source_positions) - len(set(source_positions))
+                "duplicate_position_count": len(source_position_values)
+                - len(set(source_position_values))
             },
         )
     if source.competition_source_id is not None and source.competition_id is None:
@@ -149,8 +152,8 @@ def decide_event(
 
     automatic_window, guard_window = event_windows_seconds(source.sport_code)
     source_set = set(participant_ids)
-    source_roles = _role_map_source(source)
-    source_positions = _position_map_source(source)
+    source_role_map = _role_map_source(source)
+    source_position_map = _position_map_source(source)
     scored: list[CandidateEvidence] = []
     rejected: Counter[str] = Counter()
     duplicate_risks: Counter[str] = Counter()
@@ -182,16 +185,16 @@ def decide_event(
 
         candidate_roles = _role_map_candidate(candidate)
         candidate_positions = _position_map_candidate(candidate)
-        comparable_role = source_roles is not None and candidate_roles is not None
+        comparable_role = source_role_map is not None and candidate_roles is not None
         comparable_position = (
             not comparable_role
-            and source_positions is not None
+            and source_position_map is not None
             and candidate_positions is not None
         )
-        if comparable_role and source_roles != candidate_roles:
+        if comparable_role and source_role_map != candidate_roles:
             duplicate_risks["duplicate_risk_role_conflict"] += 1
             continue
-        if comparable_position and source_positions != candidate_positions:
+        if comparable_position and source_position_map != candidate_positions:
             duplicate_risks["duplicate_risk_position_conflict"] += 1
             continue
         if delta_seconds > automatic_window:
