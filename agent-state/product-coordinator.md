@@ -10,39 +10,29 @@ OddsAggregator is prematch-only. Live/in-play matches, markets, odds, ingestion,
 
 Milestones M0, M1, and M2 are complete. Milestone M3 — multi-source prematch normalization and matching — is in progress.
 
-## Verified completed foundation
+## Verified completed M3 foundation
 
-- Normalized domain and PostgreSQL persistence.
-- Shared connector DTO/error/resilience/runtime layer.
-- CI with Ruff, strict mypy, PostgreSQL/Alembic, and pytest.
-- Bet365 reference connector through Sportradar Odds Comparison Prematch v2.
-- Connector-to-canonical ingestion with replay idempotency and append-only odds history.
-- Bet365 sport-identity correction from issue #11.
-- PR #10 merged to `main` as `616a3f72cf760b9636eff6b932ef48ef3898133c`.
+- Issue #14 / PR #20: authoritative `prematch-v1` matching/canonicalization contract and ADR 0002 — complete.
+- Issue #16 / PR #21: competition, participant, and event prematch matching foundation — complete.
+- Issue #22 / PR #23: production `ConnectorIngestionService` integration with `prematch-v1` — complete.
+- Issue #24: Bet365/Sportradar structured competition/participant identity evidence — complete.
+- PR #23 merged to `main` as `6dd50acf2db9cd98650b138c7c341f6fe28fcb91`.
+- Post-merge CI run #74 succeeded.
+- No open pull requests were present at this coordination checkpoint.
 
-## Coordination checkpoint — 2026-09-10
+## Remaining M3 issues
 
-- Latest `main` commit inspected: `7dc6014fc2463e0cd6bc414da3993c4e45cf9a0d` (`chore: record prematch-only scope decision`).
-- Latest CI run #46 on `main` completed successfully.
-- There are no open pull requests.
-- Historical branches from completed issues remain, but none represents active M3 work.
-- Product tracking issue #13 is closed as completed.
-- Active M3 issues #14, #15, #16, #17, and #18 were reviewed for dependencies and scope.
-
-## Active M3 issues
-
-- #14 — prematch matching/canonicalization architecture contract — READY, highest priority.
-- #15 — second permitted prematch source connector — READY in parallel; no active PR currently implements it.
-- #16 — competition/participant/event prematch matching — BLOCKED until #14 completes.
-- #17 — prematch market/selection matching — BLOCKED by #14/#16; #15 fixtures are required for real-source acceptance.
-- #18 — two-source prematch end-to-end QA reconciliation — BLOCKED by #14–#17.
+- #19 — normalize Bet365/Sportradar prematch market semantics — READY / highest priority.
+- #15 — add a second permitted prematch source — READY in parallel.
+- #17 — canonical prematch market/selection matching — READY for synthetic implementation because #14/#16 are complete; real-source acceptance depends on #15 and #19.
+- #18 — two-source end-to-end QA reconciliation — BLOCKED until #15, #17, and #19 complete.
 
 ## Coordination decision
 
-No new issue is needed. The roadmap, backlog, README, and active issue set are already consistent, and creating additional work now would duplicate existing ownership.
+Issue #19 is the next single highest-priority task. The first reference connector still has a known market/selection semantic-token conformance gap; resolving that correctness issue takes precedence over treating more source data as canonical matching evidence.
 
-SOFTWARE ARCHITECT should take issue #14 next. BOOKMAKER INTEGRATION ENGINEER may independently proceed with issue #15, but the single required handoff from this run is SOFTWARE ARCHITECT because #14 is the dependency that unlocks backend matching.
+Issue #15 should follow or proceed in parallel to reduce external-source lead-time risk. Backend issue #17 may independently begin its synthetic structural matching implementation, but final M3 acceptance must use conforming fixtures from #19 and the second source from #15.
 
 ## Integration constraint
 
-No agent may bypass CAPTCHAs, authentication/authorization controls, anti-bot systems, rate limits, geo-restrictions, or other access controls. Direct Bet365 extraction remains out of scope; the existing reference connector uses the documented Sportradar provider boundary and is prematch-only.
+Only permitted prematch integration methods may be used. No agent may bypass CAPTCHAs, authentication/authorization controls, anti-bot systems, rate limits, geo-restrictions, or other access controls. Direct Bet365 extraction remains out of scope; the existing reference connector uses the documented Sportradar provider boundary.
