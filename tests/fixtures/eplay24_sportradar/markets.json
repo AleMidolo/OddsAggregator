@@ -1,0 +1,98 @@
+{
+  "generated_at": "2026-09-10T17:15:30Z",
+  "sport_event": {
+    "id": "sr:sport_event:eplay24-2001",
+    "status": "not_started"
+  },
+  "markets": [
+    {
+      "id": "sr:market:1",
+      "name": "3way",
+      "books": [
+        {
+          "id": "sr:book:28901",
+          "name": "Bet365.US.NJ",
+          "external_market_id": "b365-other-market",
+          "outcomes": []
+        },
+        {
+          "id": "sr:book:999999",
+          "name": "E-Play24",
+          "external_market_id": "ep24-market-1",
+          "external_sport_event_id": "ep24-event-771",
+          "removed": false,
+          "outcomes": [
+            {
+              "id": "sr:outcome:ep24-home",
+              "external_outcome_id": "ep24-home",
+              "type": "home",
+              "odds_decimal": "2.06",
+              "removed": false
+            },
+            {
+              "id": "sr:outcome:ep24-draw",
+              "external_outcome_id": "ep24-draw",
+              "type": "draw",
+              "odds_decimal": "3.35",
+              "removed": false
+            },
+            {
+              "id": "sr:outcome:ep24-away",
+              "external_outcome_id": "ep24-away",
+              "type": "away",
+              "odds_decimal": "3.31",
+              "removed": false
+            },
+            {
+              "odds_decimal": "2.00"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sr:market:18",
+      "name": "total",
+      "books": [
+        {
+          "id": "sr:book:999999",
+          "name": "E-Play24",
+          "external_market_id": "ep24-market-total-suspended",
+          "external_sport_event_id": "ep24-event-771",
+          "removed": true,
+          "outcomes": [
+            {
+              "id": "sr:outcome:ep24-over",
+              "external_outcome_id": "ep24-over",
+              "type": "over",
+              "total": 2.5,
+              "removed": true
+            },
+            {
+              "id": "sr:outcome:ep24-under",
+              "external_outcome_id": "ep24-under",
+              "type": "under",
+              "total": 2.5,
+              "removed": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "malformed",
+      "books": [
+        {
+          "id": "sr:book:999999",
+          "name": "E-Play24",
+          "removed": false,
+          "outcomes": [
+            {
+              "odds_decimal": "not-a-number"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
