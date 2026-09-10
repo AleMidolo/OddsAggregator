@@ -23,11 +23,13 @@ from ..dtos import (
     EventFeedResult,
     MarketFeedRequest,
     MarketFeedResult,
+    SourceCompetition,
     SourceEvent,
     SourceEventParticipant,
     SourceEventStatus,
     SourceMarket,
     SourceMarketStatus,
+    SourceParticipant,
     SourcePrice,
     SourceSelection,
     SourceSport,
@@ -301,7 +303,18 @@ class Bet365SportradarConnector:
         sport_source_id = _string(sport.get("id")) or request.sport_source_id
         if sport_source_id is None:
             return None
-        competition_source_id = _string(competition.get("id")) or request.competition_source_id
+
+        provider_competition_id = _string(competition.get("id"))
+        competition_source_id = provider_competition_id or request.competition_source_id
+        competition_name = _string(competition.get("name"))
+        competition_details = None
+        if provider_competition_id is not None and competition_name is not None:
+            competition_details = SourceCompetition(
+                source_id=provider_competition_id,
+                sport_source_id=sport_source_id,
+                name=competition_name,
+                metadata={"provider": "sportradar"},
+            )
 
         participants: list[SourceEventParticipant] = []
         competitor_names: list[str] = []
@@ -309,11 +322,20 @@ class Bet365SportradarConnector:
             competitor_id = _string(raw_competitor.get("id"))
             if competitor_id is None:
                 continue
-            competitor_names.append(_string(raw_competitor.get("name")) or competitor_id)
+            competitor_name = _string(raw_competitor.get("name"))
+            participant_details = None
+            if competitor_name is not None:
+                competitor_names.append(competitor_name)
+                participant_details = SourceParticipant(
+                    source_id=competitor_id,
+                    name=competitor_name,
+                    metadata={"provider": "sportradar"},
+                )
             participants.append(
                 SourceEventParticipant(
                     source_id=competitor_id,
                     role=_string(raw_competitor.get("qualifier")),
+                    participant=participant_details,
                 )
             )
 
@@ -327,6 +349,7 @@ class Bet365SportradarConnector:
             source_id=source_id,
             sport_source_id=sport_source_id,
             competition_source_id=competition_source_id,
+            competition=competition_details,
             name=name,
             participants=tuple(participants),
             start_time=start_time,
