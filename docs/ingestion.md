@@ -49,12 +49,15 @@ The shared event DTO remains backward compatible with source-reference-only conn
 not provider payload objects.
 
 When embedded identity evidence is present, ingestion uses its name and supported metadata for
-cross-source matching. When it is absent, first-source creation falls back to the exact source ID
-as the non-semantic source label, preserving the earlier deterministic bootstrap behavior.
-Cross-source connectors should provide the shared identity evidence when their documented feed
-already exposes it; provider-specific extraction remains inside the connector package.
+cross-source matching. When descriptive identity evidence is absent, ingestion derives a
+stable opaque hash label from the exact source ID and still resolves through the matcher. This
+preserves deterministic first-source creation while preventing provider IDs with common prefixes
+from becoming accidental fuzzy-name evidence. The original source ID remains preserved in
+`SourceEntityMapping`.
 
-The backend does not inspect arbitrary connector metadata to infer names or identity semantics.
+Cross-source connectors should provide the shared identity evidence when their documented feed
+already exposes it; provider-specific extraction remains inside the connector package. The
+backend does not inspect arbitrary connector metadata to infer names or identity semantics.
 
 ## Market and selection boundary
 
@@ -89,6 +92,7 @@ CI uses deterministic fake connectors only. PostgreSQL integration coverage incl
 - mapping-first replay with immutable matching decisions;
 - ambiguous parent resolution producing no event/market write and no market network call;
 - connector-run partial/rejected accounting;
+- live-sentinel rejection before parent identity resolution;
 - unavailable observations without fabricated prices.
 
 CI never calls a live bookmaker or provider service.
