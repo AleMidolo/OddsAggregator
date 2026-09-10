@@ -9,12 +9,12 @@
         "competitors": [
           {
             "id": "sr:competitor:eplay24-110",
-            "name": "Alpha F.C.",
+            "name": "Alpha-FC",
             "qualifier": "home"
           },
           {
             "id": "sr:competitor:eplay24-120",
-            "name": "Beta Football Club",
+            "name": "Beta FC.",
             "qualifier": "away"
           }
         ],
