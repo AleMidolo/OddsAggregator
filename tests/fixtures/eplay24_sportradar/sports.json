@@ -1,0 +1,13 @@
+{
+  "generated_at": "2026-09-10T17:15:00Z",
+  "sports": [
+    {
+      "id": "sr:sport:eplay24-soccer",
+      "name": "Soccer",
+      "type": "team"
+    },
+    {
+      "name": "Malformed without id"
+    }
+  ]
+}
