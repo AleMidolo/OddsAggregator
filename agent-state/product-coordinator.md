@@ -2,9 +2,13 @@
 
 Last updated: 2026-09-10
 
+## Product scope decision
+
+OddsAggregator is prematch-only. Live/in-play matches, markets, odds, ingestion, matching, comparison, arbitrage, alerts, analytics, and QA are out of scope unless an explicit future product decision changes this constraint.
+
 ## Current phase
 
-Milestones M0, M1, and M2 are complete. Milestone M3 — multi-source normalization and matching — is in progress.
+Milestones M0, M1, and M2 are complete. Milestone M3 — multi-source prematch normalization and matching — is in progress.
 
 ## Verified completed foundation
 
@@ -19,15 +23,15 @@ Milestones M0, M1, and M2 are complete. Milestone M3 — multi-source normalizat
 
 ## Active M3 issues
 
-- #14 — matching/canonicalization architecture contract — READY, highest priority.
-- #15 — second permitted source connector — READY in parallel.
-- #16 — competition/participant/event matching — BLOCKED by #14.
-- #17 — market/selection matching — BLOCKED by #14/#16 and requires #15 fixtures for real-source acceptance.
-- #18 — two-source end-to-end QA reconciliation — BLOCKED by #14–#17.
+- #14 — prematch matching/canonicalization architecture contract — READY, highest priority. It must also align any residual live/in-play architecture assumptions with the prematch-only scope.
+- #15 — second permitted prematch source connector — READY in parallel.
+- #16 — competition/participant/event prematch matching — BLOCKED by #14.
+- #17 — prematch market/selection matching — BLOCKED by #14/#16 and requires #15 fixtures for real-source acceptance.
+- #18 — two-source prematch end-to-end QA reconciliation — BLOCKED by #14–#17.
 
 ## Coordination decision
 
-SOFTWARE ARCHITECT should take issue #14 next so backend matching code has authoritative normalization, ambiguity, confidence, persistence, and audit semantics. BOOKMAKER INTEGRATION ENGINEER may independently proceed with issue #15 using only a documented permitted automated access method.
+SOFTWARE ARCHITECT should take issue #14 next so backend matching code has authoritative normalization, ambiguity, confidence, persistence, and audit semantics that are explicitly prematch-only. BOOKMAKER INTEGRATION ENGINEER may independently proceed with issue #15 using only a documented permitted prematch automated access method.
 
 ## Integration constraint
 
