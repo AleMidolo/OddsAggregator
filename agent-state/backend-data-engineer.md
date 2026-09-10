@@ -16,21 +16,26 @@ Implementation branch: `backend/issue-22-ingestion-matching`.
 - Successful runs with skipped identities are recorded as `partial` instead of silently succeeded.
 - Accidental live input is rejected before parent resolution, preventing prematch parent mappings.
 - Optional shared `SourceCompetition` / `SourceParticipant` evidence can accompany event refs.
-- Legacy source-reference-only events retain deterministic first-source creation fallback.
+- Missing competition/participant descriptive evidence is passed through `prematch-v1` as an
+  empty semantic name and audited as `rejected / invalid_name` when no mapping already exists.
+- Source IDs and hashes are never promoted to semantic matcher names.
+- Existing accepted source mappings remain mapping-first even when a later observation omits
+  optional descriptive evidence.
 - Direct competition/participant/event bootstrap was removed from ingestion persistence.
 - Market persistence cannot implicitly create a participant from a selection reference.
-- Synthetic PostgreSQL coverage exercises two-source canonical convergence and ambiguity safety.
+- Synthetic PostgreSQL coverage exercises two-source canonical convergence, ambiguity safety,
+  missing-evidence rejection, and live rejection.
 
 ## Boundaries
 - Issue #17 still owns structural market and selection cross-source matching.
 - Provider-specific extraction of inline competition/participant evidence stays in connector code.
 - Issue #15 supplies the second permitted real source for final M3 validation.
-- Issue #19 owns Bet365/Sportradar provider-specific semantic conformance.
+- Issue #19 / connector follow-ups own provider-specific semantic conformance.
 - No live/in-play support is introduced.
 
 ## Verification
-Repository CI is required for Ruff, strict mypy, Alembic/PostgreSQL, and the full suite.
+Exact-head repository CI is required for Ruff, strict mypy, Alembic/PostgreSQL, and the full suite.
 
 ## Next recommended agent
-QA / RELEASE ENGINEER should review the issue #22 PR after CI is green. If CI exposes a
+QA / RELEASE ENGINEER should re-review the issue #22 PR after CI is green. If CI exposes a
 backend-owned problem, return to BACKEND / DATA ENGINEER before merge.
