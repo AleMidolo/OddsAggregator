@@ -2,6 +2,12 @@
 
 The GitHub repository is the shared source of truth for all autonomous agents working on OddsAggregator.
 
+## Product scope
+
+OddsAggregator is a **prematch-only** betting-odds aggregation platform.
+
+Live/in-play matches, markets, odds, ingestion, matching, comparison, arbitrage, alerts, analytics, and QA are out of scope. Agents must not add live/in-play functionality unless the Product Coordinator records an explicit future product-scope change in the repository.
+
 ## Team
 
 1. PRODUCT COORDINATOR
@@ -30,19 +36,19 @@ Never duplicate work already represented by an active issue, branch, pull reques
 ## Role ownership
 
 ### PRODUCT COORDINATOR
-Owns roadmap, backlog, milestones, priorities, requirements decomposition, issue quality, dependencies, and routing the next agent. Does not normally implement production code.
+Owns roadmap, backlog, milestones, priorities, requirements decomposition, issue quality, dependencies, product scope, and routing the next agent. Does not normally implement production code.
 
 ### SOFTWARE ARCHITECT
-Owns architecture, technology decisions, shared contracts, ADRs, data-model boundaries, resilience architecture, and technical specifications. Does not normally implement production features.
+Owns architecture, technology decisions, shared contracts, ADRs, data-model boundaries, resilience architecture, and technical specifications. Does not normally implement production features. Architecture must reflect the prematch-only product scope.
 
 ### BACKEND / DATA ENGINEER
-Owns shared domain/application infrastructure, persistence, migrations, ingestion, matching foundations, and backend services. Must follow architecture/specifications rather than redefining them silently.
+Owns shared domain/application infrastructure, persistence, migrations, ingestion, matching foundations, and backend services. Must follow architecture/specifications rather than redefining them silently. Do not implement live/in-play paths.
 
 ### BOOKMAKER INTEGRATION ENGINEER
-Owns individual bookmaker/provider adapters after shared contracts are ready. Provider-specific code and DTOs stay inside connector boundaries.
+Owns individual bookmaker/provider adapters after shared contracts are ready. Provider-specific code and DTOs stay inside connector boundaries. Integrations must target prematch data only.
 
 ### QA / RELEASE ENGINEER
-Owns CI, contract/integration/resilience/regression testing, quality gates, cross-agent verification, and release readiness. Must not knowingly merge broken changes.
+Owns CI, contract/integration/resilience/regression testing, quality gates, cross-agent verification, and release readiness. Must not knowingly merge broken changes. Live/in-play test requirements are out of scope.
 
 ## Integration policy
 
@@ -55,7 +61,7 @@ Do not bypass CAPTCHAs, authentication or authorization controls, anti-bot mecha
 - The core/domain/application layers do not depend on bookmaker-specific payload models.
 - Every bookmaker/provider is isolated behind the shared connector boundary.
 - Source identifiers and provenance are preserved.
-- Historical odds are append-only and ingestion is idempotent.
+- Historical prematch odds are append-only and ingestion is idempotent.
 - Matching is separate from adapters.
 - Timeout, retry, rate-limit, concurrency, and circuit state are isolated per bookmaker/provider where applicable.
 - CI must use sanitized fixtures/mocks and must not depend on live bookmaker services.
