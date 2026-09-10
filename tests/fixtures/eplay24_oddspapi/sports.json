@@ -1,0 +1,11 @@
+[
+  {
+    "sportId": 10,
+    "slug": "soccer",
+    "sportName": "Soccer"
+  },
+  {
+    "slug": "malformed",
+    "sportName": "Missing id"
+  }
+]
