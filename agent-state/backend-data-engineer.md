@@ -3,33 +3,34 @@
 Last updated: 2026-09-10
 
 ## Current work
-Issue #16 — competition, participant, and prematch event matching foundation.
+Issue #22 — integrate prematch matching into production connector ingestion.
 
-Implementation branch: `backend/issue-16-prematch-matching`.
+Implementation branch: `backend/issue-22-ingestion-matching`.
 
 ## Implemented
-- Deterministic `prematch-v1` text/metadata normalization and name similarity.
-- Exact competition and participant hard filters, Decimal scoring, thresholds, and margins.
-- Prematch event candidate generation/scoring with default and tennis time windows.
-- Duplicate-risk protection for role/position reversals and guard-window time conflicts.
-- Mapping-first reuse and deterministic canonical UUID creation.
-- Prematch-only live sentinel rejection with no mapping creation.
-- MatchDecision / bounded MatchCandidate audit persistence and Alembic migration 0003.
-- Accepted-only competition/participant alias learning with bounded provenance.
-- SQLAlchemy matching store with short transaction boundaries and concurrent mapping reuse.
-- Synthetic unit and PostgreSQL integration coverage for match/create/ambiguous/unresolved/
-  rejected/reused behavior.
+- Two-phase production ingestion: canonical event identity resolves before market fetch/persist.
+- Competition, participant, and event identity now routes through `PrematchMatchingService`.
+- Mapping-first reuse and immutable same-fingerprint matching decisions remain authoritative.
+- Dependency order is sport, competition, participants, then event.
+- Non-accepted parent/event outcomes skip dependent markets and increment run rejection counts.
+- Successful runs with skipped identities are recorded as `partial` instead of silently succeeded.
+- Accidental live input is rejected before parent resolution, preventing prematch parent mappings.
+- Optional shared `SourceCompetition` / `SourceParticipant` evidence can accompany event refs.
+- Legacy source-reference-only events retain deterministic first-source creation fallback.
+- Direct competition/participant/event bootstrap was removed from ingestion persistence.
+- Market persistence cannot implicitly create a participant from a selection reference.
+- Synthetic PostgreSQL coverage exercises two-source canonical convergence and ambiguity safety.
+
+## Boundaries
+- Issue #17 still owns structural market and selection cross-source matching.
+- Provider-specific extraction of inline competition/participant evidence stays in connector code.
+- Issue #15 supplies the second permitted real source for final M3 validation.
+- Issue #19 owns Bet365/Sportradar provider-specific semantic conformance.
+- No live/in-play support is introduced.
 
 ## Verification
-- Focused pure matcher/service unit tests: 9 passed locally.
-- Python compileall and repository 100-character line-length check: passed locally.
-- Ruff, strict mypy, Alembic/PostgreSQL, and full pytest are delegated to repository CI.
-
-## Coordination note
-Issue #15 (second permitted source) can proceed in parallel and is not required for the initial
-synthetic #16 implementation. Issue #17 should follow after #16 is merged; final M3 two-source
-acceptance belongs to QA issue #18.
+Repository CI is required for Ruff, strict mypy, Alembic/PostgreSQL, and the full suite.
 
 ## Next recommended agent
-QA / RELEASE ENGINEER should review the issue #16 PR after CI is green. If CI exposes a
+QA / RELEASE ENGINEER should review the issue #22 PR after CI is green. If CI exposes a
 backend-owned problem, return to BACKEND / DATA ENGINEER before merge.
