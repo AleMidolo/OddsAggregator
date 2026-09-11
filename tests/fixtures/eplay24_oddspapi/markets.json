@@ -1,0 +1,51 @@
+[
+  {
+    "marketId": 101,
+    "marketLength": 3,
+    "sportId": 10,
+    "playerProp": false,
+    "handicap": 0,
+    "period": "fulltime",
+    "marketType": "1x2",
+    "marketName": "Full Time Result",
+    "marketNameShort": "1X2",
+    "outcomes": [
+      {
+        "outcomeId": 101,
+        "outcomeName": "1"
+      },
+      {
+        "outcomeId": 102,
+        "outcomeName": "X"
+      },
+      {
+        "outcomeId": 103,
+        "outcomeName": "2"
+      }
+    ]
+  },
+  {
+    "marketId": 104,
+    "marketLength": 2,
+    "sportId": 10,
+    "playerProp": false,
+    "handicap": 2.5,
+    "period": "fulltime",
+    "marketType": "totals",
+    "marketName": "Total Goals 2.5",
+    "marketNameShort": "Total 2.5",
+    "outcomes": [
+      {
+        "outcomeId": 104,
+        "outcomeName": "Over"
+      },
+      {
+        "outcomeId": 105,
+        "outcomeName": "Under"
+      }
+    ]
+  },
+  {
+    "marketName": "Malformed without marketId"
+  }
+]

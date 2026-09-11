@@ -1,0 +1,134 @@
+{
+  "fixtureId": "op:fixture:eplay24-2001",
+  "status": {
+    "live": false,
+    "statusId": 0,
+    "statusName": "Pre-Game"
+  },
+  "sport": {
+    "sportId": 10,
+    "sportName": "Soccer"
+  },
+  "tournament": {
+    "tournamentId": 5017,
+    "tournamentName": "Premier League",
+    "categoryName": "England"
+  },
+  "season": {},
+  "venue": {},
+  "startTime": 1789066020,
+  "participants": {
+    "participant1Id": 90110,
+    "participant1Name": "Alpha-FC",
+    "participant2Id": 90120,
+    "participant2Name": "Beta FC."
+  },
+  "scores": {},
+  "clock": null,
+  "externalProviders": {},
+  "bookmakers": {
+    "eplay24.it": {
+      "bookmaker": "eplay24.it",
+      "bookmakerFixtureId": "ep24-fixture-771",
+      "fixturePath": null,
+      "hasOdds": true,
+      "staleOdds": false,
+      "staleOddsResponseCode": null,
+      "suspended": false,
+      "participantsRotated": false,
+      "meta": null,
+      "updatedAt": "2026-09-10T17:15:30Z"
+    }
+  },
+  "odds": {
+    "eplay24.it": {
+      "ep24-odds-home": {
+        "bookmaker": "eplay24.it",
+        "outcomeId": 101,
+        "playerId": 0,
+        "price": 2.08,
+        "active": true,
+        "marketActive": true,
+        "mainLine": true,
+        "marketId": 101,
+        "bookmakerMarketId": "ep24-market-1x2",
+        "bookmakerOutcomeId": "ep24-home",
+        "bookmakerChangedAt": 1789060530000,
+        "changedAt": 1789060531000
+      },
+      "ep24-odds-draw": {
+        "bookmaker": "eplay24.it",
+        "outcomeId": 102,
+        "playerId": 0,
+        "price": 3.36,
+        "active": true,
+        "marketActive": true,
+        "mainLine": true,
+        "marketId": 101,
+        "bookmakerMarketId": "ep24-market-1x2",
+        "bookmakerOutcomeId": "ep24-draw",
+        "bookmakerChangedAt": 1789060530000,
+        "changedAt": 1789060531000
+      },
+      "ep24-odds-away": {
+        "bookmaker": "eplay24.it",
+        "outcomeId": 103,
+        "playerId": 0,
+        "price": 3.29,
+        "active": true,
+        "marketActive": true,
+        "mainLine": true,
+        "marketId": 101,
+        "bookmakerMarketId": "ep24-market-1x2",
+        "bookmakerOutcomeId": "ep24-away",
+        "bookmakerChangedAt": 1789060530000,
+        "changedAt": 1789060531000
+      },
+      "ep24-odds-over": {
+        "bookmaker": "eplay24.it",
+        "outcomeId": 104,
+        "playerId": 0,
+        "price": 1.91,
+        "active": false,
+        "marketActive": false,
+        "mainLine": true,
+        "marketId": 104,
+        "bookmakerMarketId": "ep24-market-total",
+        "bookmakerOutcomeId": "ep24-over",
+        "changedAt": 1789060531000
+      },
+      "ep24-odds-under": {
+        "bookmaker": "eplay24.it",
+        "outcomeId": 105,
+        "playerId": 0,
+        "price": 1.93,
+        "active": false,
+        "marketActive": false,
+        "mainLine": true,
+        "marketId": 104,
+        "bookmakerMarketId": "ep24-market-total",
+        "bookmakerOutcomeId": "ep24-under",
+        "changedAt": 1789060531000
+      },
+      "malformed-no-market": {
+        "bookmaker": "eplay24.it",
+        "outcomeId": 999,
+        "playerId": 0,
+        "price": 2.0,
+        "active": true,
+        "changedAt": 1789060531000
+      }
+    },
+    "other-book": {
+      "other-home": {
+        "bookmaker": "other-book",
+        "outcomeId": 101,
+        "playerId": 0,
+        "price": 9.99,
+        "active": true,
+        "marketId": 101,
+        "changedAt": 1789060531000
+      }
+    }
+  }
+}
