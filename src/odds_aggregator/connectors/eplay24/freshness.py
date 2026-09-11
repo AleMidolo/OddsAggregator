@@ -8,11 +8,16 @@ persisted as currently available odds.
 
 from __future__ import annotations
 
-from ..dtos import MarketFeedRequest, MarketFeedResult, SourceMarket, SourcePrice, SourceSelection
+from ..dtos import (
+    MarketFeedRequest,
+    MarketFeedResult,
+    SourceMarket,
+    SourcePrice,
+    SourceSelection,
+)
 from ..errors import ConnectorConfigurationError, ConnectorSchemaError
 from .connector import (
     EPLAY24_BOOKMAKER_SLUG,
-    Eplay24OddsPapiConnector as _BaseEplay24OddsPapiConnector,
     _bookmaker_meta,
     _group_quotes,
     _is_pregame,
@@ -24,6 +29,9 @@ from .connector import (
     _required_mapping,
     _required_mapping_field,
     _string,
+)
+from .connector import (
+    Eplay24OddsPapiConnector as _BaseEplay24OddsPapiConnector,
 )
 
 
